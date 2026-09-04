@@ -10,6 +10,12 @@ repos no aportaba aislamiento real, solo overhead de mantenimiento.
 Repo nuevo, sin historia heredada. Reemplaza los repos `normatividad-ocr-adapter`
 y `ocr-search` (creados primero por separado, luego fusionados aqui).
 
+Ver `context.md` para el modelo de dominio de Normatividad (estados de
+cola, reglas de `enqueue()`, la distincion entre las rutas de storage que
+Munis usa, y las lecciones de seguridad al probar contra produccion real)
+y `TEST_OFICIAL_2_REPOS.md` en la carpeta padre para la corrida de
+verificacion completa.
+
 ## Estructura
 
 ```
