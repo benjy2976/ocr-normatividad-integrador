@@ -1,0 +1,115 @@
+services:
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # normatividad-worker: consumidor activo de la cola OCR de Normatividad.
+  # Sin puertos expuestos - proceso interno de polling.
+  # Sin GPU: no ejecuta el motor OCR, solo orquesta llamadas HTTP a ocr-core.
+  # ─────────────────────────────────────────────────────────────────────────
+  normatividad-worker:
+    build: ./adapter
+    environment:
+      # ── Normatividad ──────────────────────────────────────────────────
+      NORMATIVIDAD_BASE_URL: ${NORMATIVIDAD_BASE_URL:-}
+      NORMATIVIDAD_OCR_TOKEN: ${NORMATIVIDAD_OCR_TOKEN:-}
+      # ── ocr-core ──────────────────────────────────────────────────────
+      OCR_CORE_URL: ${OCR_CORE_URL:-http://ocr-core:8000}
+      OCR_CORE_JOB_TIMEOUT_SECONDS: ${OCR_CORE_JOB_TIMEOUT_SECONDS:-1800}
+      OCR_CORE_JOB_POLL_INTERVAL_SECONDS: ${OCR_CORE_JOB_POLL_INTERVAL_SECONDS:-2}
+      # ── Storage compartido con ocr-core ──────────────────────────────
+      OCR_SHARED_CACHE_DIR: /nfs-cache
+      # ── Worker ────────────────────────────────────────────────────────
+      OCR_WORKER_NAME: ${OCR_WORKER_NAME:-normatividad-worker-1}
+      OCR_WORKER_CONCURRENCY: ${OCR_WORKER_CONCURRENCY:-1}
+      OCR_POLL_INTERVAL_SECONDS: ${OCR_POLL_INTERVAL_SECONDS:-10}
+      OCR_WORKER_ENABLED: ${OCR_WORKER_ENABLED:-true}
+      OCR_CALLBACK_TIMEOUT_SECONDS: ${OCR_CALLBACK_TIMEOUT_SECONDS:-30}
+      OCR_DOWNLOAD_TIMEOUT_SECONDS: ${OCR_DOWNLOAD_TIMEOUT_SECONDS:-120}
+      OCR_WORKER_MAX_CONSECUTIVE_ERRORS: ${OCR_WORKER_MAX_CONSECUTIVE_ERRORS:-20}
+      OCR_WORKER_LOG_LEVEL: ${OCR_WORKER_LOG_LEVEL:-INFO}
+    volumes:
+      # Debe ser el MISMO volumen que monta ocr-core como OCR_SHARED_CACHE_DIR.
+      - ocr_nfs_cache:/nfs-cache
+    networks:
+      - grh_network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # opensearch: motor de busqueda documental
+  # Puerto externo: 19200 -> interno: 9200
+  # ─────────────────────────────────────────────────────────────────────────
+  opensearch:
+    image: opensearchproject/opensearch:2.15.0
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms1g -Xmx1g"
+      bootstrap.memory_lock: "true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "19200:9200"
+      - "19600:9600"
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    networks:
+      - grh_network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # ocr-search-api: API de busqueda sobre OpenSearch
+  # Puerto externo: 18020 -> interno: 8000
+  # ─────────────────────────────────────────────────────────────────────────
+  ocr-search-api:
+    build: ./search
+    ports:
+      - "18020:8000"
+    environment:
+      OPENSEARCH_URL: ${OPENSEARCH_URL:-http://opensearch:9200}
+      OPENSEARCH_INDEX: ${OPENSEARCH_INDEX:-munis_ocr_pages}
+    networks:
+      - grh_network
+    depends_on:
+      - opensearch
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # ocr-search-indexer: indexa artefactos text JSON desde el cache compartido
+  # con ocr-core (mismo volumen NFS que ocr-core monta como OCR_SHARED_CACHE_DIR)
+  # ─────────────────────────────────────────────────────────────────────────
+  ocr-search-indexer:
+    build: ./search
+    environment:
+      OCR_SHARED_CACHE_DIR: /nfs-cache
+      OPENSEARCH_URL: ${OPENSEARCH_URL:-http://opensearch:9200}
+      OPENSEARCH_INDEX: ${OPENSEARCH_INDEX:-munis_ocr_pages}
+      SEARCH_INDEXER_POLL_INTERVAL_SECONDS: ${SEARCH_INDEXER_POLL_INTERVAL_SECONDS:-300}
+      SEARCH_INDEXER_BATCH_SIZE: ${SEARCH_INDEXER_BATCH_SIZE:-500}
+      SEARCH_INDEXER_LOG_LEVEL: ${SEARCH_INDEXER_LOG_LEVEL:-INFO}
+    volumes:
+      - ocr_nfs_cache:/nfs-cache:ro
+    networks:
+      - grh_network
+    command: ["python3", "-m", "app.search_indexer"]
+    depends_on:
+      - opensearch
+    restart: unless-stopped
+
+volumes:
+  opensearch_data:
+  ocr_nfs_cache:
+    # Debe apuntar al MISMO volumen fisico que usa ocr-core (OCR_SHARED_CACHE_DIR).
+    # El nombre real depende del nombre del proyecto compose de ocr-core (Docker
+    # Compose prefija <nombre_proyecto>_<nombre_volumen>). Verificar con
+    # `docker volume ls` cual es el volumen real de ocr-core antes de levantar
+    # este compose, y ajustar el "name" de abajo si no coincide.
+    external: true
+    name: ocr_ocr_nfs_cache
+
+networks:
+  grh_network:
+    external: true
