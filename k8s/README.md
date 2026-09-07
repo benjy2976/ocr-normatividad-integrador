@@ -15,7 +15,7 @@ stack de busqueda (OpenSearch + indexer + API).
   su codigo.
 - **Sin GPU ni `initContainer` de seed-models** en el worker — confirmado
   que nunca los necesito (ver `../context.md`, seccion GPU). El seed de
-  modelos ahora vive en el deployment de `ocr-api` del repo `ocr-core`.
+  modelos ahora vive en el deployment de `ocr-core` en su propio repo.
 - `ocr-search-api` y `ocr-search-indexer` usan `<registro>/ocr-search:latest`
   (construida desde `search/`) en vez de la imagen monolitica.
 - El `Secret` se renombro de `ocr-service-secret` (con `MUNIS_BASE_URL`)
@@ -31,8 +31,8 @@ Ambos repos deben desplegarse en el **mismo namespace** (`ocr-service`).
 Si se aplica este repo antes que `ocr-core`, los pods que necesitan ese
 PVC quedan en `Pending` hasta que aparezca — no es un error, solo orden.
 
-De igual manera, `OCR_CORE_URL: http://ocr-api:8000` (en
-`02-configmap-worker.yaml`) asume que el `Service` `ocr-api` de `ocr-core`
+De igual manera, `OCR_CORE_URL: http://ocr-core:8000` (en
+`02-configmap-worker.yaml`) asume que el `Service` `ocr-core`
 ya existe en el mismo namespace.
 
 ## Uso

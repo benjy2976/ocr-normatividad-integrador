@@ -4,8 +4,8 @@ metadata:
   name: normatividad-worker-config
   namespace: ocr-service
 data:
-  # ocr-api es el Service que crea el repo ocr-core, en el mismo namespace.
-  OCR_CORE_URL: http://ocr-api:8000
+  # ocr-core es el Service que crea el repo ocr-core, en el mismo namespace.
+  OCR_CORE_URL: http://ocr-core:8000
   OCR_CORE_JOB_TIMEOUT_SECONDS: "1800"
   OCR_CORE_JOB_POLL_INTERVAL_SECONDS: "2"
   OCR_SHARED_CACHE_DIR: /nfs-cache

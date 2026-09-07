@@ -103,12 +103,12 @@ volumes:
   opensearch_data:
   ocr_nfs_cache:
     # Debe apuntar al MISMO volumen fisico que usa ocr-core (OCR_SHARED_CACHE_DIR).
-    # El nombre real depende del nombre del proyecto compose de ocr-core (Docker
-    # Compose prefija <nombre_proyecto>_<nombre_volumen>). Verificar con
-    # `docker volume ls` cual es el volumen real de ocr-core antes de levantar
-    # este compose, y ajustar el "name" de abajo si no coincide.
+    # Confirmado 2026-09-04: el repo ocr-core (carpeta "ocr-core") crea el
+    # volumen "ocr-core_ocr_nfs_cache" (Docker Compose prefija
+    # <nombre_proyecto>_<nombre_volumen>, y el proyecto toma el nombre de la
+    # carpeta). Verificar con `docker volume ls` si cambia.
     external: true
-    name: ocr_ocr_nfs_cache
+    name: ocr-core_ocr_nfs_cache
 
 networks:
   grh_network:
