@@ -1,0 +1,133 @@
+schema_version: "1.3"
+
+documentation_model:
+  version: "0.5"
+  organization: by_artifact_family
+  preproduction_as_complete_target: true
+
+project:
+  name: normatividad-services
+  description: >
+    Integracion entre la cola OCR de Normatividad (Munis) y ocr-core:
+    consumo de cola (adapter/), orquestacion via HTTP hacia ocr-core, y
+    busqueda documental sobre los resultados (search/). Dos servicios
+    dentro de un mismo repo, fusionados porque comparten el mismo
+    acoplamiento de dominio e infraestructura (ver context.md).
+  kind: utility_component # no es solucion independiente, complementa el proceso OCR de Munis (consume su cola, procesa, devuelve resultado)
+  responsible_unit: null # TODO: no hay designacion institucional formal registrada
+  technical_owner: null # TODO: autor real en git es Walther Aguirre Tello, sin designacion institucional formal
+  development_mode: internal # evidencia: desarrollado directamente sobre infraestructura de GORE Huanuco
+
+governance:
+  profile: generic
+  directive:
+    code: "N°02.S5.DI.SGMTD"
+    version: "1.0"
+
+lifecycle:
+  stage: development_testing
+  gorehco_hito: null # perfil generic, no aplica
+
+version:
+  current: "0.1.0" # bootstrap - no hay versionado formal previo en este repo
+  production: false # sin release versionado ni CI; opero como reemplazo de facto del worker de K8s durante pruebas, no como artefacto liberado
+
+data:
+  persistent_structured_data: true # el indice de OpenSearch (search/) persiste documentos de pagina; no es una BD relacional propia
+  personal_data: true # evidencia real: una prueba de busqueda devolvio un documento con nombre y circunstancia personal de una persona (permiso por lactancia materna) - los documentos de Normatividad pueden contener datos personales
+
+documentation_context:
+  incorporation_stage: development_testing
+  existing_system: false # servicio nuevo, extraido del monorepo original como adapter+search independientes
+  historical_design_artifacts_available: false # nunca hubo diseno formal previo
+
+interface:
+  kind: none # sin interfaz grafica; adapter es worker headless, search expone solo API HTTP consumida programaticamente
+  significant_ui_change: null
+  historical_prototypes_available: null
+  prototype_requirement_status: not_applicable
+  prototype_justification: >
+    Sin interfaz de usuario final. adapter/ es un worker headless; search/
+    expone GET /search consumido programaticamente, sin UI propia.
+
+licensing:
+  # Expediente por etapas (skill v0.3.0+). Rutas actualizadas a la taxonomia
+  # v0.4.0/v0.5.0 (docs/documentacion-administrativa/licenciamiento/), contenido sin cambios.
+  workflow_state: project_evaluation # matriz de evaluacion completa; sin riesgo legal urgente (todo permisivo); determinacion en espera de ocr-core
+  reference_basis:
+    type: project_model # catalogo del modelo SGD aportado por la skill, NO es el Anexo 05 oficial de la Directiva
+    reference: "documentar-auditar-software-v0.5.0/references/licensing/modelo-matriz-comparativa-sgd.md"
+    local_copy: docs/documentacion-administrativa/licenciamiento/02-evaluacion/catalogo-referencia.md
+  dependencies_matrix:
+    path: docs/documentacion-administrativa/licenciamiento/01-dependencias/matriz-dependencias.yml
+    status: draft
+  project_evaluation:
+    path: docs/documentacion-administrativa/licenciamiento/02-evaluacion/matriz-evaluacion-proyecto.yml
+    status: draft
+  technical_report:
+    path: docs/documentacion-administrativa/licenciamiento/03-determinacion/informe-tecnico-determinacion.md
+    status: draft
+    reference: null
+    recommended_spdx_id: null # sin licencia recomendada propia; en espera de la determinacion de ocr-core
+  legal_review:
+    path: docs/documentacion-administrativa/licenciamiento/03-determinacion/revision-legal.md
+    status: pending
+    reference: null
+  institutional_decision:
+    path: docs/documentacion-administrativa/licenciamiento/03-determinacion/decision-institucional.md
+    status: pending
+    reference: null
+  determined:
+    scheme: null
+    spdx_id: null
+    decided_at: null
+  official_license_text:
+    path: docs/documentacion-administrativa/licenciamiento/04-licencia/texto-oficial-referencia.md
+    status: pending
+    reference: null
+  implementation_verification:
+    path: docs/documentacion-administrativa/licenciamiento/05-verificacion/cumplimiento-licencia.md
+    status: blocked
+
+public_software:
+  candidate: false
+  published: false
+  production_since: null
+
+# Migracion a taxonomia v0.5.0 (2026-09-07): utility_component no tiene
+# cambios de plantilla (identica a v0.4.0). Se agregan documentation_context
+# e interface (nuevos en schema 1.3), y se adopta un diagrama de secuencia
+# real (SEQ-001, extrapolado de adapter/app/worker.py) aunque no es exigible
+# para utility_component - decision explicita de adoptarlo igual.
+paths:
+  docs_root: docs
+  docs_index: docs/README.md
+  project_sheet: docs/proyecto/ficha-proyecto.md
+  # ficha_tecnica_componente no es una clave estandar del schema v0.5
+  # (additionalProperties permite extenderlo) - es el documento minimo
+  # que exige el molde utility_component ademas de project_sheet.
+  ficha_tecnica_componente: docs/documentacion-tecnica/ficha-tecnica-componente.md
+  requirements: docs/documentacion-tecnica/reglas-negocio.md # no existe requerimientos formal separado (RF/RNF); reglas de negocio (RN-001 a RN-006) es lo unico verificable contra codigo real
+  analysis: null # TODO: nunca se hizo un analisis formal
+  design: null # TODO: sin documento de diseno formal unificado; ver sequence_diagrams abajo
+  architecture: docs/documentacion-tecnica/arquitectura/arquitectura.md
+  data_dictionary: null # TODO: pendiente - modelo de datos real (colas/estados de Munis) es externo, sin diagrama de referencia propio aun
+  sequence_diagrams: docs/documentacion-tecnica/diseno/secuencias
+  security: docs/documentacion-tecnica/seguridad/seguridad.md # GAP REAL Y URGENTE: personal_data=true, sin tratamiento formal
+  personal_data: docs/documentacion-tecnica/seguridad/seguridad.md # mismo documento cubre ambos aspectos por ahora
+  user_manual: null # NO_APLICA: sin interfaz de usuario final
+  installation: docs/manuales/instalacion-configuracion.md
+  operations: null # TODO: contenido real hoy vive en ../TEST_OFICIAL_2_REPOS.md, fuera de este repo (compartido con ocr-core)
+  test_plan: null # TODO: no existen tests automatizados
+  test_cases: null # TODO: no existen tests automatizados
+  test_results: null # TODO: validacion real hecha contra produccion, no formalizada como resultados de prueba
+  # verificacion_componente no es clave estandar del schema v0.5 (additionalProperties)
+  verificacion_componente: docs/pruebas-validaciones/verificacion-componente.md
+  ownership: docs/documentacion-administrativa/titularidad/titularidad.md
+  production_references: null # TODO
+
+external_evidence:
+  ownership_reference: null
+  favorable_hito_report: null
+  production_verification_report: null
+  administrative_notes: []

@@ -469,7 +469,8 @@ def _text_artifact_metadata(
 ) -> dict[str, Any]:
     """
     Arma el objeto `metadata` que viaja como passthrough opaco dentro de
-    options.metadata en POST /jobs (ver ocr-core/modelo-datos.md). ocr-core
+    options.metadata en POST /jobs (ver ocr-core/docs/documentacion-tecnica/datos/diccionario/TextDocument.md).
+    ocr-core
     no le da ningun significado a este dict; solo lo copia dentro del
     artefacto text.
     """

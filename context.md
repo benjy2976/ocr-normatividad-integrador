@@ -87,7 +87,7 @@ Descubierto investigando un `422` real durante las pruebas:
 En Kubernetes, esta confusion tenia una version mas grave: el deployment
 de `ocr-api` real **no montaba el PVC `ocr-shared-cache`** — solo lo
 montaban `ocr-worker` y `ocr-search-indexer`. Se corrigio (ver historial
-de `ocr-core/arquitectura.md`), pero el despliegue a K8s quedo pausado por
+de `ocr-core/docs/documentacion-tecnica/arquitectura/arquitectura.md`), pero el despliegue a K8s quedo pausado por
 decision del operador.
 
 ## El origen real de los documentos: tres servidores, no uno
@@ -143,6 +143,48 @@ en `adapter/app/worker.py` (no viven en `ocr-core`, que es generico):
   se reclasifica como `block` en vez de `fail` ante Munis.
 - Artefactos ya cacheados (`has_pdf`/`has_text` true + archivo existente
   en el storage compartido) no se vuelven a pedir a `ocr-core`.
+
+## Operacion sostenida real contra produccion (2026-09-07)
+
+Se encendio el stack completo (`normatividad-worker` + `opensearch` +
+`ocr-search-api` + `ocr-search-indexer`) contra Normatividad real
+(`https://proyectos.regionhuanuco.gob.pe`), con el `ocr-worker` de K8s
+confirmado en `0/0`. Funciono como reemplazo de facto del worker de K8s
+durante varias horas, procesando items reales de forma continua sin
+intervencion. Detalle completo, comandos y checklist en
+`TEST_OFICIAL_2_REPOS.md` (carpeta padre), seccion "Modo operacion
+sostenida".
+
+**Incidente real:** reiniciar `ocr-core` (en su propio repo) para aplicar
+un fix mientras `normatividad-worker` seguia activo contra produccion
+interrumpio un job a medio reportar — el reintento automatico choco con
+sus propios artefactos ya escritos (`overwrite=false` en `POST /jobs`) y
+el item termino en `status: failed` tras agotar reintentos. Se resolvio
+re-encolando manualmente desde la UI de Munis. Leccion: apagar
+`normatividad-worker` **antes** de reiniciar `ocr-core` en caliente
+cuando ambos estan activos contra produccion real.
+
+## Endpoint `GET /api/ocr/normatividad/queue/summary` (agregado 2026-09-07)
+
+Munis no exponia ninguna forma de conocer el tamano real de la cola con
+el token de servicio (`ocr.service`) — solo via `app/normatividad/ocr/summary`,
+que requiere sesion web. Se agrego un endpoint nuevo en Munis
+(`OcrServiceController::queueSummary()`), protegido por el mismo
+middleware `ocr.service`, que devuelve **solo agregados** (conteo por
+estado + fecha del pendiente mas antiguo, sin datos individuales de
+expediente). Ya esta implementado y desplegado en produccion real —
+confirmado con una llamada real (`pending: 0` en el momento de la prueba).
+
+**Pendiente en este repo:** todavia no hay un cliente para este endpoint
+en `adapter/app/normatividad_client.py` ni se usa desde el worker (por
+ejemplo, para loguear el tamano de la cola al arrancar o antes de encender
+el modo continuo). Es la siguiente mejora natural de observabilidad, no
+implementada todavia.
+
+Tambien se evaluo (no implementado) un endpoint `queue/requeue/{regulationFile}`
+para reencolar manualmente sin necesitar sesion web — surgio del mismo
+incidente de arriba, cuando no hubo forma de reencolar el item fallido
+mas que pidiendole al operador que lo hiciera desde la UI.
 
 ## Esquema de busqueda acoplado a Normatividad (decision vigente)
 

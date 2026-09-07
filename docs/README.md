@@ -1,0 +1,43 @@
+# Documentación del proyecto
+
+> Índice vivo de la documentación. Actualizar junto con los artefactos del proyecto.
+
+## Estado general
+
+- Proyecto: normatividad-services
+- Versión: 0.1.0
+- Perfil: generic
+- Tipo: utility_component (no es solución independiente — complementa el proceso OCR de Munis)
+- Hito/etapa: development (sin `gorehco_hito` formal; perfil `generic`)
+
+| Familia | Estado | Observación |
+|---|---|---|
+| Proyecto | OK | Ficha del componente completa. |
+| Manuales | OK | Instalación/configuración completa. |
+| Documentación técnica | PARCIAL | Ficha técnica, arquitectura y reglas de negocio completas; seguridad es gap real y **urgente** (`data.personal_data: true`). |
+| Pruebas y validaciones | PARCIAL | Sin tests automatizados; verificación real documentada contra producción. |
+| Documentación administrativa | PARCIAL | Licenciamiento con expediente completo (sin conflicto, en espera de `ocr-core`); titularidad preliminar; puesta en producción pendiente. |
+
+## Artefactos y exigibilidad (utility_component)
+
+| Artefacto | Ruta | Estado | Observación |
+|---|---|---|---|
+| Índice | `docs/README.md` | OK | — |
+| Ficha del componente | `proyecto/ficha-proyecto.md` | OK | — |
+| Ficha técnica del componente | `documentacion-tecnica/ficha-tecnica-componente.md` | OK | — |
+| Arquitectura | `documentacion-tecnica/arquitectura/arquitectura.md` | OK | — |
+| Reglas de negocio | `documentacion-tecnica/reglas-negocio.md` | OK | RN-001 a RN-006, trazables contra código real. |
+| Diagrama de secuencia | `documentacion-tecnica/diseno/secuencias/` | OK | No exigible para `utility_component`; adoptado igual (SEQ-001, extrapolado de `adapter/app/worker.py`). |
+| Seguridad | `documentacion-tecnica/seguridad/seguridad.md` | GAP REAL — URGENTE | `personal_data: true` con evidencia real; sin tratamiento formal aún. |
+| Instalación/configuración | `manuales/instalacion-configuracion.md` | OK | — |
+| Verificación del componente | `pruebas-validaciones/verificacion-componente.md` | OK | Basada en operación real, no en suite de tests. |
+| Licenciamiento | `documentacion-administrativa/licenciamiento/` | EN PROGRESO | Sin conflicto propio; determinación en espera de `ocr-core`. |
+| Titularidad | `documentacion-administrativa/titularidad/titularidad.md` | PARCIAL | Preliminar; sin designación institucional formal. |
+
+## Bloqueantes
+
+- Seguridad de datos personales: hallazgo real de datos personales expuestos en resultados de búsqueda, sin tratamiento formal definido — más urgente que el licenciamiento en este repositorio.
+
+## No verificables
+
+- Ninguno identificado por ahora.
