@@ -1,0 +1,101 @@
+schema_version: "2.0"
+document_status: final
+
+reference_basis:
+  type: project_model
+  reference: "documentar-auditar-software-v0.6.0/references/licensing/modelo-matriz-comparativa-sgd.md"
+
+project:
+  name: normatividad-services
+  version_under_evaluation: "0.1.0"
+  intended_use: >
+    Adapter (consume cola OCR de Normatividad, llama a ocr-core) + search (indexacion
+    y busqueda sobre resultados en OpenSearch). No es solucion independiente:
+    complementa el proceso OCR de Normatividad (kind: utility_component).
+  distribution_model: internal_only # corre exclusivamente dentro de la infraestructura de GORE Huanuco, sin distribucion
+  spp_candidate: false
+
+selection_requirements:
+  must:
+    - Ser compatible con las licencias de sus dependencias directas (todas permisivas: MIT/BSD-3/Apache-2.0, ver matriz-dependencias.yml).
+    - No exponer ni comprometer los datos personales que pueden aparecer en los documentos indexados (data.personal_data: true en proyecto.yml).
+  should:
+    - Mantener consistencia con la licencia determinada para ocr-core (AGPL-3.0-only, free_open, 2026-09-08), dado que ambos repos forman parte de la misma cadena de valor.
+  considerations_requiring_specialist_review: []
+
+candidate_licenses:
+  - id: MIT
+    included: true
+    technical_fit: favorable
+    functional_fit: favorable
+    dependency_compatibility: compatible
+    legal_considerations:
+      status: not_evaluated
+      notes: []
+    spp_fit: favorable
+    key_obligations: [notice_preservation]
+    risks_or_restrictions: []
+    observations: "Compatible con todas las dependencias actuales sin condiciones."
+    conclusion: suitable
+
+  - id: Apache-2.0
+    included: true
+    technical_fit: favorable
+    functional_fit: favorable
+    dependency_compatibility: compatible
+    legal_considerations:
+      status: not_evaluated
+      notes: []
+    spp_fit: favorable
+    key_obligations: [notice_preservation]
+    risks_or_restrictions: []
+    observations: "Misma familia de licencias que la mayoría de sus dependencias."
+    conclusion: suitable
+
+  - id: Privada-institucional
+    included: true
+    technical_fit: favorable # sin dependencias con copyleft, no hay conflicto tecnico
+    functional_fit: conditional # coherente con que es un utility_component sin vocacion de reutilizacion externa
+    dependency_compatibility: compatible
+    legal_considerations:
+      status: not_evaluated
+      notes: []
+    spp_fit: not_applicable
+    key_obligations: []
+    risks_or_restrictions:
+      - "Dado que maneja datos personales indirectamente (documentos indexados), mantenerlo privado es coherente con minimizar exposicion, aunque el codigo en si no contenga datos."
+    observations: >
+      Dado que es utility_component sin vocacion de reutilizacion (no es una
+      solucion independiente, solo complementa Normatividad), esta opcion sigue
+      siendo razonable por defecto.
+    conclusion: suitable_with_conditions
+
+dependency_compatibility_policy:
+  - dependency_license: Apache-2.0
+    integration_modes: [library]
+    result: compatible
+    rationale: "Permisiva, compatible con cualquier regimen que se determine para el proyecto."
+    source: matriz-dependencias.yml
+  - dependency_license: MIT
+    integration_modes: [library]
+    result: compatible
+    rationale: "Permisiva, compatible con cualquier regimen que se determine para el proyecto."
+    source: matriz-dependencias.yml
+  - dependency_license: BSD-3-Clause
+    integration_modes: [library]
+    result: compatible
+    rationale: "Permisiva, compatible con cualquier regimen que se determine para el proyecto."
+    source: matriz-dependencias.yml
+
+recommendation:
+  selected_scheme: null # sin determinacion propia aun; decision deliberadamente pendiente
+  selected_spdx_id: null
+  rationale: >
+    Sin dependencias con copyleft, la decision aqui es de bajo riesgo tecnico.
+    Al ser un utility_component sin vocacion de reutilizacion externa, el
+    regimen "privada institucional" sigue siendo razonable por defecto, o
+    alinear con ocr-core (ya determinado: free_open, AGPL-3.0-only,
+    2026-09-08) si se prefiere consistencia de la cadena de valor completa.
+    Esta decision queda deliberadamente pendiente hasta que se defina.
+  unresolved_issues:
+    - "Decision propia de regimen aun no tomada - depende de una preferencia de consistencia con ocr-core, no de un conflicto tecnico real."

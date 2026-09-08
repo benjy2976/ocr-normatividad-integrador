@@ -1,5 +1,5 @@
 """
-OCR Worker — consumidor activo de la cola de Normatividad en Munis.
+OCR Worker — consumidor activo de la cola de Normatividad.
 
 Flujo por iteracion:
   1. pull_next()              -> pide el siguiente trabajo a Normatividad

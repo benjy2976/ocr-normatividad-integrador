@@ -1,6 +1,6 @@
 # normatividad-services
 
-Todo lo que conecta la cola OCR de Normatividad (Munis) con `ocr-core`:
+Todo lo que conecta la cola OCR de Normatividad con `ocr-core`:
 consumo de la cola, orquestacion del OCR via HTTP, y busqueda documental
 sobre los resultados. Un solo repo porque ambas partes comparten el mismo
 acoplamiento de dominio (Normatividad) y la misma dependencia de
@@ -11,13 +11,13 @@ Repo nuevo, sin historia heredada. Reemplaza los repos `normatividad-ocr-adapter
 y `ocr-search` (creados primero por separado, luego fusionados aqui).
 
 No es una solucion independiente — es un componente utilitario que apoya
-el proceso de digitalizacion de Munis (ver `docs/proyecto.yml`,
-`project.kind: utility_component`). Sin Munis no tiene ningun proposito
+el proceso de digitalizacion de Normatividad (ver `docs/proyecto.yml`,
+`project.kind: utility_component`). Sin Normatividad no tiene ningun proposito
 propio.
 
 Ver `context.md` para el modelo de dominio de Normatividad (estados de
 cola, reglas de `enqueue()`, la distincion entre las rutas de storage que
-Munis usa, y las lecciones de seguridad al probar contra produccion real)
+Normatividad usa, y las lecciones de seguridad al probar contra produccion real)
 y `TEST_OFICIAL_2_REPOS.md` en la carpeta padre para la corrida de
 verificacion completa.
 
@@ -25,7 +25,7 @@ verificacion completa.
 
 ```
 adapter/     consumidor de la cola OCR de Normatividad
-  app/normatividad_client.py   cliente HTTP hacia Munis
+  app/normatividad_client.py   cliente HTTP hacia Normatividad
   app/ocr_core_client.py        cliente HTTP hacia ocr-core (POST /jobs)
   app/worker.py                 orquestacion: pull-next -> ocr-core -> report
 search/      busqueda documental sobre los artefactos que produce ocr-core
@@ -56,4 +56,4 @@ para el estado de la migracion.
 
 Ver `docs/documentacion-tecnica/reglas-negocio.md` — tabla trazable de las
 reglas preservadas del worker histórico (skip/block/cache) más las de
-`enqueue()` en Munis de las que este repo depende.
+`enqueue()` en Normatividad de las que este repo depende.

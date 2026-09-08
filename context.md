@@ -1,11 +1,10 @@
 # Contexto de decision: normatividad-services
 
-## Que es Normatividad / Munis
+## Que es Normatividad
 
 Sistema de gestion documental del Gobierno Regional de Huanuco (GORE
-Huanuco). "Munis" es el nombre coloquial de la plataforma Laravel que lo
-implementa; "Normatividad" es el modulo especifico que administra normas
-(resoluciones, ordenanzas, actas, etc.) y su OCR. Produccion real vive en
+Huanuco). Normatividad administra normas (resoluciones, ordenanzas, actas,
+etc.) y su OCR. Produccion real vive en
 `https://proyectos.regionhuanuco.gob.pe`, corre en Kubernetes (fuera del
 alcance de este repo).
 
@@ -42,7 +41,7 @@ archivo, no por intento):
 
 ## Reglas de negocio de `RegulationFileOcrManager::enqueue()`
 
-No es un simple insert. La logica real (en el codigo de Munis, no en este
+No es un simple insert. La logica real (en el codigo de Normatividad, no en este
 repo):
 
 1. Evalua elegibilidad (`eligibilityService->evaluate($file)`) — si no es
@@ -59,7 +58,7 @@ reprocesa aunque el archivo ya tenga OCR previo.
 
 ## Autenticacion del servicio OCR (`OcrServiceAuth`)
 
-Middleware propio de Munis (`app/Http/Middleware/OcrServiceAuth.php`):
+Middleware propio de Normatividad (`app/Http/Middleware/OcrServiceAuth.php`):
 acepta **IP permitida** (`config('ocr.allowed_ips')`) **o** bearer token
 (`config('ocr.service_token')`) — no ambos. Si ninguno matchea, `403`, no
 `404`. Si alguna vez un endpoint de `/api/ocr/normatividad/*` devuelve
@@ -73,11 +72,11 @@ en el mismo host.
 Descubierto investigando un `422` real durante las pruebas:
 
 - `PATH_DESTINO` (disco `ftp_destino` en `config/filesystems.php` de
-  Munis) — de donde Munis **sirve** el PDF fuente cuando el worker hace
+  Normatividad) — de donde Normatividad **sirve** el PDF fuente cuando el worker hace
   `GET /queue/{id}/source`. En produccion, el archivo fuente real vive en
   un tercer servidor (ver siguiente seccion), no necesariamente en el
   mismo NFS que usa `ocr-core`.
-- `PATH_DESTINO_OCR` (disco `ocr_cache`) — de donde Munis **verifica** que
+- `PATH_DESTINO_OCR` (disco `ocr_cache`) — de donde Normatividad **verifica** que
   el artefacto OCR ya existe, al recibir `POST /queue/{id}/artifacts`.
   Este es el que tiene que coincidir exactamente con
   `OCR_SHARED_CACHE_DIR` de `ocr-core`, o `report_artifacts` falla con
@@ -98,14 +97,14 @@ distintos, faciles de confundir:
 | IP | Rol |
 |---|---|
 | `10.0.0.102` | Cache de artefactos OCR (exports NFS: `ocr`, `datos_siaf`, `minio`) |
-| `10.0.0.103` | Datos completos de Normatividad — el archivo fuente real (carpeta `regulations/` con miles de PDFs). Tambien es `FTP_HOST_ORIGEN` en `config/filesystems.php` de Munis (disco `origen`, driver FTP) |
+| `10.0.0.103` | Datos completos de Normatividad — el archivo fuente real (carpeta `regulations/` con miles de PDFs). Tambien es `FTP_HOST_ORIGEN` en `config/filesystems.php` de Normatividad (disco `origen`, driver FTP) |
 | `proyectos.regionhuanuco.gob.pe` | Produccion real, HTTP publico |
 
-Para una instancia de Munis de **prueba/backup** local, `PATH_DESTINO`
+Para una instancia de Normatividad de **prueba/backup** local, `PATH_DESTINO`
 suele apuntar a disco local (no a ninguno de estos servidores) — hay que
 copiar el PDF manualmente a la ruta esperada para poder descargarlo via
 `GET /source`. Ver `TEST_OFICIAL_2_REPOS.md`, seccion "Variante: probar
-contra Munis de desarrollo/backup".
+contra Normatividad de desarrollo/backup".
 
 ## Seguridad operativa al probar contra produccion real
 
@@ -140,7 +139,7 @@ en `adapter/app/worker.py` (no viven en `ocr-core`, que es generico):
   puede inferir `ocr-core` porque es una decision de negocio, no tecnica.
 - Si `ocr-core` reporta `status: failed` con un mensaje que parece error
   de firma digital detectada durante el OCR (no en el preflight inicial),
-  se reclasifica como `block` en vez de `fail` ante Munis.
+  se reclasifica como `block` en vez de `fail` ante Normatividad.
 - Artefactos ya cacheados (`has_pdf`/`has_text` true + archivo existente
   en el storage compartido) no se vuelven a pedir a `ocr-core`.
 
@@ -160,15 +159,15 @@ un fix mientras `normatividad-worker` seguia activo contra produccion
 interrumpio un job a medio reportar — el reintento automatico choco con
 sus propios artefactos ya escritos (`overwrite=false` en `POST /jobs`) y
 el item termino en `status: failed` tras agotar reintentos. Se resolvio
-re-encolando manualmente desde la UI de Munis. Leccion: apagar
+re-encolando manualmente desde la UI de Normatividad. Leccion: apagar
 `normatividad-worker` **antes** de reiniciar `ocr-core` en caliente
 cuando ambos estan activos contra produccion real.
 
 ## Endpoint `GET /api/ocr/normatividad/queue/summary` (agregado 2026-09-07)
 
-Munis no exponia ninguna forma de conocer el tamano real de la cola con
+Normatividad no exponia ninguna forma de conocer el tamano real de la cola con
 el token de servicio (`ocr.service`) — solo via `app/normatividad/ocr/summary`,
-que requiere sesion web. Se agrego un endpoint nuevo en Munis
+que requiere sesion web. Se agrego un endpoint nuevo en Normatividad
 (`OcrServiceController::queueSummary()`), protegido por el mismo
 middleware `ocr.service`, que devuelve **solo agregados** (conteo por
 estado + fecha del pendiente mas antiguo, sin datos individuales de

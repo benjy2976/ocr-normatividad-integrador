@@ -6,7 +6,7 @@
 
 - Sin documento formal de seguridad ni de protección de datos previo a este registro.
 - El índice de OpenSearch (`search/`) persiste texto extraído de documentos, incluyendo posibles datos personales incidentales al contenido de la norma/expediente.
-- Autenticación entre `adapter/` y Munis: token Bearer (`NORMATIVIDAD_OCR_TOKEN`) — ver [instalacion-configuracion.md](../../manuales/instalacion-configuracion.md).
+- Autenticación entre `adapter/` y Normatividad: token Bearer (`NORMATIVIDAD_OCR_TOKEN`) — ver [instalacion-configuracion.md](../../manuales/instalacion-configuracion.md).
 - Sin control de acceso propio en la API de búsqueda (`search/` expone `GET /search` sin autenticación adicional documentada).
 
 ## Pendiente (urgente)

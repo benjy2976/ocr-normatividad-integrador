@@ -1,5 +1,5 @@
 """
-Cliente HTTP para la API OCR de Normatividad (Munis).
+Cliente HTTP para la API OCR de Normatividad.
 
 Encapsula todos los calls hacia Normatividad: pull de cola, marcado de
 estado, descarga de PDF fuente y envio del resultado OCR.

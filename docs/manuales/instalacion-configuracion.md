@@ -3,7 +3,7 @@
 ## Datos generales
 - **Software:** normatividad-services
 - **Versión:** 0.1.0 (ver `../proyecto.yml`)
-- **Descripción:** Integración entre la cola OCR de Normatividad (Munis) y
+- **Descripción:** Integración entre la cola OCR de Normatividad y
   `ocr-core`: `adapter/` (consumo de cola) y `search/` (búsqueda documental).
 
 ## Requisitos de hardware
@@ -84,4 +84,4 @@ TODO — sin designación institucional formal registrada (ver `../proyecto.yml`
 `project.responsible_unit`).
 
 ## Licencia aplicable
-Pendiente — ver `../proyecto.yml`, `licensing.workflow_state`, y el expediente completo en `../documentacion-administrativa/licenciamiento/`.
+Pendiente — ver `../proyecto.yml`, `licensing.workflow_state`, y el expediente completo en `../licenciamiento/`.

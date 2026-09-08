@@ -7,7 +7,7 @@
 - Proyecto: normatividad-services
 - Versión: 0.1.0
 - Perfil: generic
-- Tipo: utility_component (no es solución independiente — complementa el proceso OCR de Munis)
+- Tipo: utility_component (no es solución independiente — complementa el proceso OCR de Normatividad)
 - Hito/etapa: development (sin `gorehco_hito` formal; perfil `generic`)
 
 | Familia | Estado | Observación |
@@ -31,7 +31,7 @@
 | Seguridad | `documentacion-tecnica/seguridad/seguridad.md` | GAP REAL — URGENTE | `personal_data: true` con evidencia real; sin tratamiento formal aún. |
 | Instalación/configuración | `manuales/instalacion-configuracion.md` | OK | — |
 | Verificación del componente | `pruebas-validaciones/verificacion-componente.md` | OK | Basada en operación real, no en suite de tests. |
-| Licenciamiento | `documentacion-administrativa/licenciamiento/` | EN PROGRESO | Sin conflicto propio; determinación en espera de `ocr-core`. |
+| Licenciamiento | `licenciamiento/` | EN PROGRESO | Sin conflicto propio; determinación en espera de `ocr-core`. |
 | Titularidad | `documentacion-administrativa/titularidad/titularidad.md` | PARCIAL | Preliminar; sin designación institucional formal. |
 
 ## Bloqueantes

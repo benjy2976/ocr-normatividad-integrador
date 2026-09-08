@@ -1,7 +1,7 @@
 # Catálogo / matriz comparativa de referencia
 
 - Tipo de fuente: `project_model`
-- Referencia: `documentar-auditar-software-v0.3.0/references/licensing/modelo-matriz-comparativa-sgd.md`
+- Referencia: `documentar-auditar-software-v0.6.0/references/licensing/modelo-matriz-comparativa-sgd.md`
 - Fecha/versión: transcripción del Anexo N.° 01 del informe técnico del SGD, incorporada a la skill en su versión 0.3.0 (2026-09-07)
 - Responsable de actualización: Walther Aguirre Tello
 

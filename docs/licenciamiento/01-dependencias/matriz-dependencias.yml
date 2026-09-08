@@ -1,0 +1,100 @@
+schema_version: "2.0"
+project: normatividad-services
+updated_at: "2026-09-08"
+scanner:
+  version: "0.6"
+  sources: ["adapter/requirements.txt", "search/requirements.txt"]
+selected_license:
+  scheme: null # sin determinacion propia aun; sin conflicto tecnico que la exija
+  spdx_id: null
+health:
+  status: ok
+  incompatible_count: 0
+  potential_conflict_count: 0
+  review_count: 0
+  unknown_count: 0
+components:
+  - name: requests
+    ecosystem: python
+    version: "2.32.3"
+    direct: true
+    scope: runtime
+    source_file: adapter/requirements.txt
+    integration_mode: library
+    license_detected: Apache-2.0
+    license_source: pypi
+    license_confidence: high
+    compatibility:
+      status: compatible
+      basis: "Permisiva, sin condicionantes sobre el regimen del proyecto."
+      reason: null
+    obligations: [notice_preservation]
+    notes: "Único dependency directo del adapter."
+
+  - name: fastapi
+    ecosystem: python
+    version: "0.115.0"
+    direct: true
+    scope: runtime
+    source_file: search/requirements.txt
+    integration_mode: library
+    license_detected: MIT
+    license_source: pypi
+    license_confidence: high
+    compatibility:
+      status: compatible
+      basis: "Permisiva, sin condicionantes sobre el regimen del proyecto."
+      reason: null
+    obligations: []
+    notes: null
+
+  - name: uvicorn
+    ecosystem: python
+    version: "0.30.6"
+    direct: true
+    scope: runtime
+    source_file: search/requirements.txt
+    integration_mode: library
+    license_detected: BSD-3-Clause
+    license_source: pypi
+    license_confidence: high
+    compatibility:
+      status: compatible
+      basis: "Permisiva, sin condicionantes sobre el regimen del proyecto."
+      reason: null
+    obligations: []
+    notes: null
+
+  - name: pydantic
+    ecosystem: python
+    version: "2.8.2"
+    direct: true
+    scope: runtime
+    source_file: search/requirements.txt
+    integration_mode: library
+    license_detected: MIT
+    license_source: pypi
+    license_confidence: high
+    compatibility:
+      status: compatible
+      basis: "Permisiva, sin condicionantes sobre el regimen del proyecto."
+      reason: null
+    obligations: []
+    notes: null
+
+  - name: opensearch-py
+    ecosystem: python
+    version: "2.7.1"
+    direct: true
+    scope: runtime
+    source_file: search/requirements.txt
+    integration_mode: library
+    license_detected: Apache-2.0
+    license_source: pypi
+    license_confidence: high
+    compatibility:
+      status: compatible
+      basis: "Permisiva, sin condicionantes sobre el regimen del proyecto."
+      reason: null
+    obligations: [notice_preservation]
+    notes: null

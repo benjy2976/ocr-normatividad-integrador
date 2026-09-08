@@ -1,19 +1,19 @@
-schema_version: "1.3"
+schema_version: "1.4"
 
 documentation_model:
-  version: "0.5"
+  version: "0.6"
   organization: by_artifact_family
   preproduction_as_complete_target: true
 
 project:
   name: normatividad-services
   description: >
-    Integracion entre la cola OCR de Normatividad (Munis) y ocr-core:
+    Integracion entre la cola OCR de Normatividad y ocr-core:
     consumo de cola (adapter/), orquestacion via HTTP hacia ocr-core, y
     busqueda documental sobre los resultados (search/). Dos servicios
     dentro de un mismo repo, fusionados porque comparten el mismo
     acoplamiento de dominio e infraestructura (ver context.md).
-  kind: utility_component # no es solucion independiente, complementa el proceso OCR de Munis (consume su cola, procesa, devuelve resultado)
+  kind: utility_component # no es solucion independiente, complementa el proceso OCR de Normatividad (consume su cola, procesa, devuelve resultado)
   responsible_unit: null # TODO: no hay designacion institucional formal registrada
   technical_owner: null # TODO: autor real en git es Walther Aguirre Tello, sin designacion institucional formal
   development_mode: internal # evidencia: desarrollado directamente sobre infraestructura de GORE Huanuco
@@ -51,59 +51,60 @@ interface:
     expone GET /search consumido programaticamente, sin UI propia.
 
 licensing:
-  # Expediente por etapas (skill v0.3.0+). Rutas actualizadas a la taxonomia
-  # v0.4.0/v0.5.0 (docs/documentacion-administrativa/licenciamiento/), contenido sin cambios.
-  workflow_state: project_evaluation # matriz de evaluacion completa; sin riesgo legal urgente (todo permisivo); determinacion en espera de ocr-core
-  reference_basis:
-    type: project_model # catalogo del modelo SGD aportado por la skill, NO es el Anexo 05 oficial de la Directiva
-    reference: "documentar-auditar-software-v0.5.0/references/licensing/modelo-matriz-comparativa-sgd.md"
-    local_copy: docs/documentacion-administrativa/licenciamiento/02-evaluacion/catalogo-referencia.md
-  dependencies_matrix:
-    path: docs/documentacion-administrativa/licenciamiento/01-dependencias/matriz-dependencias.yml
-    status: draft
-  project_evaluation:
-    path: docs/documentacion-administrativa/licenciamiento/02-evaluacion/matriz-evaluacion-proyecto.yml
-    status: draft
+  # Rediseñado en skill v0.6.0: licenciamiento como familia tecnica viva
+  # (docs/licenciamiento/), sin revision legal ni decision institucional
+  # como gates del repositorio. Sin conflicto tecnico propio - determinacion
+  # de regimen queda deliberadamente pendiente (no bloqueada).
+  workflow_state: evaluation_ready # evaluacion completa (final); sin regimen seleccionado por decision, no por bloqueo
+  health: ok # 5 dependencias, todas permisivas, 0 incompatibles
+  dependency_monitoring:
+    matrix_path: docs/licenciamiento/01-dependencias/matriz-dependencias.yml
+    human_view_path: docs/licenciamiento/01-dependencias/matriz-dependencias.md
+    status: current
+    last_sync: "2026-09-08"
+    fail_on: incompatible
+  evaluation:
+    path: docs/licenciamiento/02-evaluacion/matriz-evaluacion-proyecto.yml
+    status: final
   technical_report:
-    path: docs/documentacion-administrativa/licenciamiento/03-determinacion/informe-tecnico-determinacion.md
-    status: draft
-    reference: null
-    recommended_spdx_id: null # sin licencia recomendada propia; en espera de la determinacion de ocr-core
-  legal_review:
-    path: docs/documentacion-administrativa/licenciamiento/03-determinacion/revision-legal.md
-    status: pending
-    reference: null
-  institutional_decision:
-    path: docs/documentacion-administrativa/licenciamiento/03-determinacion/decision-institucional.md
-    status: pending
-    reference: null
-  determined:
+    path: docs/licenciamiento/03-determinacion/informe-tecnico-determinacion.md
+    status: final
+    selected_scheme: null # decision de regimen deliberadamente pendiente
+    selected_spdx_id: null
+  selected:
     scheme: null
     spdx_id: null
-    decided_at: null
-  official_license_text:
-    path: docs/documentacion-administrativa/licenciamiento/04-licencia/texto-oficial-referencia.md
+    determined_at: null
+    source_report: docs/licenciamiento/03-determinacion/informe-tecnico-determinacion.md
+  implementation:
     status: pending
-    reference: null
-  implementation_verification:
-    path: docs/documentacion-administrativa/licenciamiento/05-verificacion/cumplimiento-licencia.md
-    status: blocked
+    license_files:
+      - LICENCIA.txt
+      - LICENSE
+      - LICENSE.txt
 
 public_software:
   candidate: false
   published: false
   production_since: null
 
-# Migracion a taxonomia v0.5.0 (2026-09-07): utility_component no tiene
-# cambios de plantilla (identica a v0.4.0). Se agregan documentation_context
-# e interface (nuevos en schema 1.3), y se adopta un diagrama de secuencia
-# real (SEQ-001, extrapolado de adapter/app/worker.py) aunque no es exigible
-# para utility_component - decision explicita de adoptarlo igual.
+# Migracion a skill v0.6.0 (2026-09-08): licenciamiento se traslada de
+# docs/documentacion-administrativa/licenciamiento/ a docs/licenciamiento/
+# (familia tecnica transversal, no administrativa). Se eliminan como
+# artefactos universales revision-legal.md, decision-institucional.md,
+# texto-oficial-referencia.md y cumplimiento-licencia.md. Matrices migradas
+# a schema 2.0. La determinacion de regimen sigue deliberadamente pendiente
+# (sin conflicto tecnico que la fuerce, a diferencia de ocr-core que ya
+# determino free_open/AGPL-3.0-only el 2026-09-08). Resto de la
+# documentacion (v0.5.0) preservada sin cambios de contenido. Copia de la
+# estructura v0.5.0 conservada temporalmente en docs_/ (fuera del schema,
+# pendiente de evaluar su eliminacion tras verificar cero perdida de
+# informacion).
 paths:
   docs_root: docs
   docs_index: docs/README.md
   project_sheet: docs/proyecto/ficha-proyecto.md
-  # ficha_tecnica_componente no es una clave estandar del schema v0.5
+  # ficha_tecnica_componente no es una clave estandar del schema v0.6
   # (additionalProperties permite extenderlo) - es el documento minimo
   # que exige el molde utility_component ademas de project_sheet.
   ficha_tecnica_componente: docs/documentacion-tecnica/ficha-tecnica-componente.md
@@ -111,8 +112,7 @@ paths:
   analysis: null # TODO: nunca se hizo un analisis formal
   design: null # TODO: sin documento de diseno formal unificado; ver sequence_diagrams abajo
   architecture: docs/documentacion-tecnica/arquitectura/arquitectura.md
-  data_dictionary: null # TODO: pendiente - modelo de datos real (colas/estados de Munis) es externo, sin diagrama de referencia propio aun
-  sequence_diagrams: docs/documentacion-tecnica/diseno/secuencias
+  data_dictionary: null # TODO: pendiente - modelo de datos real (colas/estados de Normatividad) es externo, sin diagrama de referencia propio aun
   security: docs/documentacion-tecnica/seguridad/seguridad.md # GAP REAL Y URGENTE: personal_data=true, sin tratamiento formal
   personal_data: docs/documentacion-tecnica/seguridad/seguridad.md # mismo documento cubre ambos aspectos por ahora
   user_manual: null # NO_APLICA: sin interfaz de usuario final
@@ -121,10 +121,12 @@ paths:
   test_plan: null # TODO: no existen tests automatizados
   test_cases: null # TODO: no existen tests automatizados
   test_results: null # TODO: validacion real hecha contra produccion, no formalizada como resultados de prueba
-  # verificacion_componente no es clave estandar del schema v0.5 (additionalProperties)
+  # verificacion_componente no es clave estandar del schema v0.6 (additionalProperties)
   verificacion_componente: docs/pruebas-validaciones/verificacion-componente.md
   ownership: docs/documentacion-administrativa/titularidad/titularidad.md
   production_references: null # TODO
+  sequence_diagrams: docs/documentacion-tecnica/diseno/secuencias
+  licensing_root: docs/licenciamiento
 
 external_evidence:
   ownership_reference: null
