@@ -27,6 +27,7 @@ verificacion completa.
 adapter/     consumidor de la cola OCR de Normatividad
   app/normatividad_client.py   cliente HTTP hacia Normatividad
   app/ocr_core_client.py        cliente HTTP hacia ocr-core (POST /jobs)
+  app/shadow_core_client.py     duplicacion aislada hacia el core candidato
   app/worker.py                 orquestacion: pull-next -> ocr-core -> report
 search/      busqueda documental sobre los artefactos que produce ocr-core
   app/search_api.py             API HTTP (GET /search)
@@ -57,3 +58,7 @@ para el estado de la migracion.
 Ver `docs/documentacion-tecnica/reglas-negocio.md` — tabla trazable de las
 reglas preservadas del worker histórico (skip/block/cache) más las de
 `enqueue()` en Normatividad de las que este repo depende.
+
+El fan-out shadow está apagado por defecto. Cuando se habilita, envía el mismo
+`source.path` del NFS al core candidato, remapea las salidas a su volumen
+privado y nunca usa ese resultado para modificar la cola ni la caché oficial.

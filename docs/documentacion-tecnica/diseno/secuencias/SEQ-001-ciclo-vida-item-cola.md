@@ -29,6 +29,7 @@ sequenceDiagram
     participant Norm as normatividad_client
     participant FS as Filesystem compartido
     participant Core as ocr_core_client (→ ocr-core)
+    participant Shadow as shadow_core_client (→ core-ocr)
 
     Loop->>Norm: pull_next()
     Norm-->>Loop: item (queue_id, payload)
@@ -44,6 +45,10 @@ sequenceDiagram
         end
         Loop->>Core: submit_job(pdf, options, artifacts_requested)
         Core-->>Loop: job_id
+        opt OCR_SHADOW_ENABLED=true
+            Loop->>Shadow: submit_job(mismo source.path, salidas privadas)
+            Shadow-->>Loop: shadow_job_id o error aislado
+        end
         Loop->>Core: wait_for_job(job_id) [polling GET /jobs/{id}]
         Core-->>Loop: job_result {status, artifacts}
 
@@ -66,6 +71,8 @@ sequenceDiagram
 - **RN-002**: si el PDF ya tenía texto útil (`skip` en preflight de `ocr-core`) y solo se pidió `pdf`, se reporta `skip` — no se publica un artefacto "nuevo".
 - **RN-003**: si `ocr-core` reporta `failed` con mensaje de error de firma digital detectado **durante** el OCR, se reclasifica como `block` ante Normatividad en vez de `fail`.
 - **RN-004**: artefactos ya cacheados (`has_pdf`/`has_text` en `true` y archivo existente) no se vuelven a pedir a `ocr-core`.
+- **RN-007**: un rechazo o fallo del core shadow solo se registra; el flujo
+  oficial continúa y es el único que reporta estados o artefactos.
 - Error de descarga del PDF fuente (`QueueSourceUnavailableError`): se reporta `fail(queue_id, ...)`.
 
 ## Postcondiciones

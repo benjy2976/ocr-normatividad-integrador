@@ -12,12 +12,12 @@ trazable, no lo duplica.
 | RN-004 | Artefactos ya cacheados (`has_pdf`/`has_text` en `true` **y** archivo existente en el storage compartido) no se vuelven a pedir a `ocr-core`. | `adapter/app/worker.py::_artifact_cached`. Evita reprocesar documentos que ya tienen resultado vigente. | — |
 | RN-005 | Al encolar (`RegulationFileOcrManager::enqueue()`, en Normatividad): si el archivo no es elegible y no se fuerza, se marca `skipped` sin crear item de cola. Si ya hay un item activo para ese archivo, se fusionan los artefactos pedidos en vez de crear uno nuevo. | Código de Normatividad (no de este repo) — documentado aquí porque el adaptador depende de este comportamiento. Ver `../../context.md`, sección "Reglas de negocio de `RegulationFileOcrManager::enqueue()`". | — |
 | RN-006 | El esquema de búsqueda (`search/app/search_common.py`) indexa campos específicos de Normatividad (`regulation_file_id`, `reg_year`, etc.) en vez de un `metadata` genérico. | Decisión de diseño explícita, no una limitación técnica — ver `arquitectura/arquitectura.md`, sección "Decisión de diseño". | Se revisita si algún día se sirve a otra plataforma. |
+| RN-007 | El despacho shadow es de mejor esfuerzo: reutiliza la fuente NFS, escribe solo en el volumen privado del candidato y ningún fallo o resultado suyo modifica estados, callbacks ni artefactos oficiales. | `adapter/app/worker.py::_submit_shadow_job` y `adapter/app/shadow_core_client.py`. | Piloto comparativo no autoritativo. |
 
 ## Gaps reales
 
 No existe un listado formal de requisitos funcionales más allá de estas
 reglas ya implementadas — nunca se hizo un levantamiento de requisitos
 previo al desarrollo (se construyó de forma incremental, documentado en
-`../../context.md`). `docs/documentacion-tecnica/reglas-negocio.md` queda
-pendiente de creación; esta tabla de reglas de negocio es lo único
-verificable hoy contra el código real.
+`../../context.md`). Esta tabla es el conjunto verificable hoy contra el
+código real.

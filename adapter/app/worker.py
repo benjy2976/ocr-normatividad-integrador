@@ -34,6 +34,9 @@ Variables de entorno relevantes:
   OCR_WORKER_MAX_CONSECUTIVE_ERRORS Detener el worker tras N errores consecutivos (default: 20)
   OCR_SHARED_CACHE_DIR              Raiz de storage compartido con ocr-core (default: /nfs-cache)
   OCR_CORE_JOB_TIMEOUT_SECONDS      Timeout esperando a que un job de ocr-core termine (default: 1800)
+  OCR_SHADOW_ENABLED                Duplica jobs al core candidato (default: false)
+  OCR_SHADOW_CORE_URL               URL interna del core candidato
+  OCR_SHADOW_OUTPUT_ROOT            Raiz privada de resultados para revision
 """
 
 import logging
@@ -48,6 +51,7 @@ from typing import Any
 
 from app import normatividad_client
 from app import ocr_core_client
+from app import shadow_core_client
 
 # ---------------------------------------------------------------------------
 # Configuracion del worker
@@ -78,6 +82,48 @@ logging.basicConfig(
     stream=sys.stdout,
 )
 logger = logging.getLogger(WORKER_NAME)
+
+
+def _submit_shadow_job(
+    source_path: Path,
+    *,
+    queue_id: Any,
+    needs_pdf: bool,
+    needs_text: bool,
+    worker_logger: logging.Logger,
+) -> str | None:
+    """Despacha una copia no autoritativa; nunca propaga errores al flujo oficial."""
+    if not shadow_core_client.enabled():
+        return None
+    artifacts = {
+        name
+        for name, requested in {"pdf": needs_pdf, "text": needs_text}.items()
+        if requested
+    }
+    if not artifacts:
+        return None
+    try:
+        accepted = shadow_core_client.submit_job(
+            source_path,
+            queue_id=queue_id,
+            artifacts=artifacts,
+        )
+    except Exception as exc:
+        worker_logger.warning(
+            "Shadow no aceptado queue_id=%s; el flujo oficial continua: %s",
+            queue_id,
+            exc,
+        )
+        return None
+
+    shadow_job_id = str(accepted["job_id"])
+    worker_logger.info(
+        "Job shadow aceptado queue_id=%s | shadow_job_id=%s | reused=%s",
+        queue_id,
+        shadow_job_id,
+        bool(accepted.get("idempotent_reuse")),
+    )
+    return shadow_job_id
 
 # ---------------------------------------------------------------------------
 # Senales de parada limpia
@@ -219,6 +265,13 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
                 artifacts=job_artifacts,
             )
             worker_logger.info("Job enviado a ocr-core queue_id=%s | job_id=%s", queue_id, job_id)
+            _submit_shadow_job(
+                inbox_pdf,
+                queue_id=queue_id,
+                needs_pdf=needs_pdf,
+                needs_text=needs_text,
+                worker_logger=worker_logger,
+            )
             job_result = ocr_core_client.wait_for_job(job_id)
             preflight = job_result.get("preflight")
 

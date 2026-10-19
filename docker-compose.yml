@@ -15,6 +15,12 @@ services:
       OCR_CORE_URL: ${OCR_CORE_URL:-http://ocr-core:8000}
       OCR_CORE_JOB_TIMEOUT_SECONDS: ${OCR_CORE_JOB_TIMEOUT_SECONDS:-1800}
       OCR_CORE_JOB_POLL_INTERVAL_SECONDS: ${OCR_CORE_JOB_POLL_INTERVAL_SECONDS:-2}
+      # Core candidato: recibe la misma fuente NFS, pero escribe solo en su
+      # volumen privado. Apagado por defecto para no alterar la operacion.
+      OCR_SHADOW_ENABLED: ${OCR_SHADOW_ENABLED:-false}
+      OCR_SHADOW_CORE_URL: ${OCR_SHADOW_CORE_URL:-http://core-ocr:8000}
+      OCR_SHADOW_OUTPUT_ROOT: ${OCR_SHADOW_OUTPUT_ROOT:-/shadow-cache/review}
+      OCR_SHADOW_SUBMIT_TIMEOUT_SECONDS: ${OCR_SHADOW_SUBMIT_TIMEOUT_SECONDS:-30}
       # ── Storage compartido con ocr-core ──────────────────────────────
       OCR_SHARED_CACHE_DIR: /nfs-cache
       # ── Worker ────────────────────────────────────────────────────────

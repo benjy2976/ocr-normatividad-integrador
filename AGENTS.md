@@ -58,6 +58,9 @@ propio (`docs/proyecto.yml`, `project.kind: utility_component`).
   activo existente → fusiona artefactos pedidos en vez de duplicar.
 - **RN-006**: el esquema de búsqueda indexa campos específicos de
   Normatividad a propósito, no un `metadata` genérico.
+- **RN-007**: el fan-out shadow es no autoritativo y de mejor esfuerzo; usa el
+  NFS solo como entrada, escribe en el volumen privado del candidato y nunca
+  altera callbacks, estados ni artefactos oficiales.
 
 ## Reglas de seguridad operativa — este repo puede tocar producción real
 
@@ -101,8 +104,9 @@ orden. Detalle en `k8s/README.md`.
 
 ## Gaps conocidos del repo
 
-- Sin tests automatizados — la validación real fue operación sostenida
-  contra producción, no suite de pruebas (`docs/pruebas-validaciones/verificacion-componente.md`).
+- Cobertura automatizada todavía parcial: RN-007 tiene pruebas unitarias; las
+  reglas históricas RN-001 a RN-006 siguen respaldadas principalmente por
+  operación sostenida (`docs/pruebas-validaciones/verificacion-componente.md`).
 - Seguridad de datos personales sin tratamiento formal (ver arriba) —
   bloqueante más urgente que licenciamiento en este repo.
 - No hay cliente para `GET /api/ocr/normatividad/queue/summary` en

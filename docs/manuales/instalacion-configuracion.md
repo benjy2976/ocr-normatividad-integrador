@@ -57,6 +57,10 @@ python worker_main.py download-source <queue_id> --output /tmp/test.pdf
 | `OCR_CORE_URL` | (obligatoria) | URL interna de ocr-core, ej. `http://ocr-core:8000` |
 | `OCR_CORE_JOB_TIMEOUT_SECONDS` | 1800 | Timeout esperando a que un job de ocr-core termine |
 | `OCR_CORE_JOB_POLL_INTERVAL_SECONDS` | 2 | Intervalo de polling de `GET /jobs/{id}` |
+| `OCR_SHADOW_ENABLED` | false | Habilita la duplicación no autoritativa hacia el core candidato |
+| `OCR_SHADOW_CORE_URL` | `http://core-ocr:8000` | URL interna del core candidato |
+| `OCR_SHADOW_OUTPUT_ROOT` | `/shadow-cache/review` | Raíz privada usada en los destinos del candidato; nunca debe apuntar al NFS |
+| `OCR_SHADOW_SUBMIT_TIMEOUT_SECONDS` | 30 | Timeout exclusivo para que el candidato copie y acepte la fuente NFS |
 | `OCR_SHARED_CACHE_DIR` | `/nfs-cache` | Raíz de storage compartido con ocr-core |
 | `OCR_WORKER_NAME` | `normatividad-worker-1` | Nombre del worker en logs |
 | `OCR_WORKER_CONCURRENCY` | 1 | Consumidores paralelos dentro del mismo servicio |
@@ -71,6 +75,16 @@ python worker_main.py download-source <queue_id> --output /tmp/test.pdf
 | `SEARCH_INDEXER_POLL_INTERVAL_SECONDS` | 300 | Frecuencia de escaneo del indexador |
 | `SEARCH_INDEXER_BATCH_SIZE` | 500 | Páginas por lote enviadas a OpenSearch |
 | `SEARCH_INDEXER_LOG_LEVEL` | INFO | Nivel de log del indexador |
+
+El core candidato debe montar el mismo NFS como `/nfs-cache:ro`. El adaptador
+solo le entrega el job después de que el core oficial lo aceptó; cualquier
+error del segundo envío se registra y no se propaga al ciclo oficial.
+
+Pruebas unitarias del aislamiento shadow:
+
+```bash
+PYTHONPATH=adapter python3 -m unittest discover -s adapter/tests -v
+```
 
 ## Buenas prácticas y recomendaciones
 - No reiniciar `ocr-core` en caliente mientras `normatividad-worker` esté
