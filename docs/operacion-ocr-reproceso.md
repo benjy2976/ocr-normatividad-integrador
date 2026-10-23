@@ -1,0 +1,51 @@
+# Operación del integrador OCR: reproceso y trazabilidad
+
+Estado: preparado localmente; todos los flags nuevos están apagados por
+defecto. Este documento no autoriza encender el loop contra la cola real.
+
+## Compatibilidad
+
+- Core antiguo + flags apagados: se conserva el comportamiento básico actual.
+- Core nuevo + flags apagados: defaults `copy`, sin telemetría.
+- `OCR_SOURCE_REUSE_ENABLED=true`: exige `pdf_on_skip_reuse` en `/meta`.
+- `OCR_TELEMETRY_FORWARD_ENABLED=true`: exige esquema y procedencia en `/meta`.
+  El bloque `execution` se reenvía sin reinterpretarlo, incluida la identidad
+  de host/instancia, el motor y la configuración versionada del pipeline.
+- `OCR_FORCE_REPROCESS_ENABLED=true`: solo ignora cache para los flags de
+  `reprocess_artifacts` y envía `overwrite=true` únicamente para ellos.
+- `OCR_QUEUE_HEARTBEAT_ENABLED=true`: renueva jobs largos; debe habilitarse
+  antes que la recuperación de `processing` vencido en Munis.
+- Independiente de los flags: si la cola trae `execution_request`, un
+  artefacto servido desde cache se reporta como
+  `{"available": true, "origin": "generated", "written": false}` para que Munis
+  conserve la versión vigente; sin ese bloque se mantiene el booleano `true`.
+
+## Orden de activación
+
+1. desplegar Munis nuevo con flags apagados y ejecutar migraciones;
+2. verificar el flujo actual con el stack vigente;
+3. drenar y detener temporalmente este worker;
+4. desplegar core 0.4.0 y comprobar `/ready` y `/meta`;
+5. desplegar este integrador con todos los flags apagados;
+6. validar un item controlado sin reproceso;
+7. activar telemetría en canary;
+8. activar reproceso real en canary;
+9. activar source reuse en canary;
+10. activar heartbeat y recién después recuperación de processing vencido.
+
+## Rollback
+
+Los flags se apagan en orden inverso. Antes de volver a un core anterior se
+drena y detiene el worker. Munis conserva estructuras aditivas y acepta
+callbacks booleanos. Nunca se reinicia el core mientras este worker mantenga
+un job oficial activo.
+
+## Validación local
+
+```bash
+python3 -m compileall -q adapter/app adapter/tests
+PYTHONPATH=adapter python3 -m unittest discover -s adapter/tests -v
+```
+
+No usar `docker compose up` como prueba: esa orden inicia el consumo continuo
+de la cola institucional.

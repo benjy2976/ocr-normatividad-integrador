@@ -292,6 +292,20 @@ def mark_processing(queue_id: int | str, worker_name: str | None = None) -> dict
     return data
 
 
+def heartbeat(queue_id: int | str, worker_name: str | None = None) -> dict:
+    """Extiende el lease de un trabajo largo sin alterar su intento."""
+    url = _url(f"/api/ocr/normatividad/queue/{queue_id}/heartbeat")
+    body = {"processor": _worker_name(worker_name)}
+    resp = _request_with_retry(
+        lambda: requests.post(url, headers=_headers(), json=body, timeout=OCR_CALLBACK_TIMEOUT),
+        method="POST",
+        url=url,
+        timeout_label="callback",
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
 def download_source(queue_id: int | str, dest_path: Path) -> None:
     """
     GET /api/ocr/normatividad/queue/{queue_id}/source
@@ -376,11 +390,13 @@ def report_artifacts(
     queue_id: int | str,
     *,
     processor: str,
-    artifacts: dict[str, bool],
+    artifacts: dict[str, object],
     finalize_queue: bool,
     duration_ms: int | None = None,
     response_payload_json: dict | None = None,
     engine_response_json: dict | None = None,
+    execution: dict | None = None,
+    metrics: dict | None = None,
 ) -> dict:
     """
     POST /api/ocr/normatividad/queue/{queue_id}/artifacts  (JSON)
@@ -399,6 +415,10 @@ def report_artifacts(
         body["response_payload_json"] = response_payload_json
     if engine_response_json is not None:
         body["engine_response_json"] = engine_response_json
+    if execution is not None:
+        body["execution"] = execution
+    if metrics is not None:
+        body["metrics"] = metrics
 
     _dbg("POST", url, body=json.dumps(body, ensure_ascii=False, indent=2))
     resp = _request_with_retry(
@@ -423,7 +443,17 @@ def report_artifacts(
     return result
 
 
-def fail(queue_id: int | str, reason: str, duration_ms: int | None = None) -> None:
+def fail(
+    queue_id: int | str,
+    reason: str,
+    duration_ms: int | None = None,
+    *,
+    processor: str | None = None,
+    response_payload_json: dict | None = None,
+    engine_response_json: dict | None = None,
+    execution: dict | None = None,
+    metrics: dict | None = None,
+) -> None:
     """
     POST /api/ocr/normatividad/queue/{queue_id}/fail  (JSON)
 
@@ -433,8 +463,18 @@ def fail(queue_id: int | str, reason: str, duration_ms: int | None = None) -> No
     url = _url(f"/api/ocr/normatividad/queue/{queue_id}/fail")
     reason_safe = str(reason)[:2000]
     body: dict = {"error_message": reason_safe}
+    if processor:
+        body["processor"] = processor
     if duration_ms is not None:
         body["duration_ms"] = duration_ms
+    if response_payload_json is not None:
+        body["response_payload_json"] = response_payload_json
+    if engine_response_json is not None:
+        body["engine_response_json"] = engine_response_json
+    if execution is not None:
+        body["execution"] = execution
+    if metrics is not None:
+        body["metrics"] = metrics
     _dbg("POST", url, body=str(body))
 
     resp = _request_with_retry(
@@ -471,6 +511,10 @@ def skip(
     reason_code: str | None = None,
     duration_ms: int | None = None,
     preflight: dict | None = None,
+    processor: str | None = None,
+    execution: dict | None = None,
+    metrics: dict | None = None,
+    engine_response_json: dict | None = None,
 ) -> dict:
     return _post_business_outcome(
         queue_id,
@@ -479,6 +523,10 @@ def skip(
         reason_code=reason_code,
         duration_ms=duration_ms,
         preflight=preflight,
+        processor=processor,
+        execution=execution,
+        metrics=metrics,
+        engine_response_json=engine_response_json,
     )
 
 
@@ -489,6 +537,10 @@ def block(
     reason_code: str | None = None,
     duration_ms: int | None = None,
     preflight: dict | None = None,
+    processor: str | None = None,
+    execution: dict | None = None,
+    metrics: dict | None = None,
+    engine_response_json: dict | None = None,
 ) -> dict:
     return _post_business_outcome(
         queue_id,
@@ -497,6 +549,10 @@ def block(
         reason_code=reason_code,
         duration_ms=duration_ms,
         preflight=preflight,
+        processor=processor,
+        execution=execution,
+        metrics=metrics,
+        engine_response_json=engine_response_json,
     )
 
 
@@ -508,9 +564,15 @@ def _post_business_outcome(
     reason_code: str | None,
     duration_ms: int | None,
     preflight: dict | None,
+    processor: str | None,
+    execution: dict | None,
+    metrics: dict | None,
+    engine_response_json: dict | None,
 ) -> dict:
     url = _url(f"/api/ocr/normatividad/queue/{queue_id}/{outcome}")
     body: dict = {"message": message}
+    if processor:
+        body["processor"] = processor
     if reason_code:
         body["reason_code"] = reason_code
     if duration_ms is not None:
@@ -526,6 +588,12 @@ def _post_business_outcome(
             "reason_code": reason_code,
             "preflight": preflight,
         }
+    if engine_response_json is not None:
+        body["engine_response_json"] = engine_response_json
+    if execution is not None:
+        body["execution"] = execution
+    if metrics is not None:
+        body["metrics"] = metrics
 
     _dbg("POST", url, body=json.dumps(body, ensure_ascii=False, indent=2))
     resp = _request_with_retry(

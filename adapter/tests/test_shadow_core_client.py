@@ -140,7 +140,11 @@ class ShadowCoreClientTest(unittest.TestCase):
             with (
                 patch.object(worker, "SHARED_CACHE_DIR", cache),
                 patch.object(worker, "INBOX_DIR", cache / "_inbox"),
-                patch.object(worker.normatividad_client, "mark_processing", return_value={}),
+                patch.object(
+                    worker.normatividad_client,
+                    "mark_processing",
+                    return_value={"data": {**item, "status": "processing"}},
+                ),
                 patch.object(
                     worker.normatividad_client,
                     "download_source",

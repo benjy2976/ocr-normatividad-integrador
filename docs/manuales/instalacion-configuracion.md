@@ -57,6 +57,14 @@ python worker_main.py download-source <queue_id> --output /tmp/test.pdf
 | `OCR_CORE_URL` | (obligatoria) | URL interna de ocr-core, ej. `http://ocr-core:8000` |
 | `OCR_CORE_JOB_TIMEOUT_SECONDS` | 1800 | Timeout esperando a que un job de ocr-core termine |
 | `OCR_CORE_JOB_POLL_INTERVAL_SECONDS` | 2 | Intervalo de polling de `GET /jobs/{id}` |
+| `OCR_CORE_META_TTL_SECONDS` | 60 | Vigencia local de las capacidades consultadas en `/meta` |
+| `OCR_CORE_SUBMIT_MAX_RETRIES` | 2 | Reintentos de `POST /jobs`; solo se usan con clave idempotente |
+| `OCR_FORCE_REPROCESS_ENABLED` | false | Respeta `reprocess_artifacts` y activa `overwrite` selectivo |
+| `OCR_TELEMETRY_FORWARD_ENABLED` | false | Solicita y reenvía procedencia y métricas del core |
+| `OCR_SOURCE_REUSE_ENABLED` | false | Usa `pdf_on_skip=reuse` si el core publica la capacidad |
+| `OCR_CORE_CAPABILITIES_REQUIRED` | false | Falla cerrado si faltan capacidades requeridas |
+| `OCR_QUEUE_HEARTBEAT_ENABLED` | false | Renueva el lease de jobs largos contra Munis nuevo |
+| `OCR_QUEUE_HEARTBEAT_SECONDS` | 60 | Intervalo entre renovaciones del lease |
 | `OCR_SHADOW_ENABLED` | false | Habilita la duplicación no autoritativa hacia el core candidato |
 | `OCR_SHADOW_CORE_URL` | `http://core-ocr:8000` | URL interna del core candidato |
 | `OCR_SHADOW_OUTPUT_ROOT` | `/shadow-cache/review` | Raíz privada usada en los destinos del candidato; nunca debe apuntar al NFS |

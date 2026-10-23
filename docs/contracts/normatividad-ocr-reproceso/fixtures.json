@@ -1,0 +1,70 @@
+{
+  "queue_basic": {
+    "queue_id": 100,
+    "source": {"md5": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+    "artifacts": {"requested": {"pdf": true, "text": false, "md": false}}
+  },
+  "queue_reprocess_pdf": {
+    "queue_id": 101,
+    "execution_request": {
+      "campaign_id": null,
+      "attempt": 1,
+      "requested_artifacts": {"pdf": true, "text": false, "md": false},
+      "reprocess_artifacts": {"pdf": true, "text": false, "md": false},
+      "pdf_on_skip": "reuse",
+      "telemetry_level": "summary_and_pages"
+    }
+  },
+  "queue_reprocess_text": {
+    "queue_id": 102,
+    "execution_request": {
+      "campaign_id": 7,
+      "attempt": 2,
+      "requested_artifacts": {"pdf": false, "text": true, "md": false},
+      "reprocess_artifacts": {"pdf": false, "text": true, "md": false},
+      "pdf_on_skip": "reuse",
+      "telemetry_level": "summary_and_pages"
+    }
+  },
+  "core_job_basic": {
+    "source": {"path": "/nfs-cache/_inbox/document.pdf"},
+    "options": {"metadata": {}},
+    "artifacts": {"pdf": {"path": "/nfs-cache/2026/1/source.pdf", "overwrite": false}}
+  },
+  "core_job_reprocess": {
+    "source": {"path": "/nfs-cache/_inbox/document.pdf"},
+    "options": {
+      "pdf_on_skip": "reuse",
+      "telemetry": {"level": "summary_and_pages"},
+      "metadata": {}
+    },
+    "artifacts": {
+      "pdf": {"path": "/nfs-cache/2026/1/source.pdf", "overwrite": true},
+      "text": {"path": "/nfs-cache/2026/1/source.jsonl", "overwrite": false}
+    },
+    "idempotency_key": "101:1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "callback_boolean": {
+    "processor": "normatividad-worker-1",
+    "finalize_queue": true,
+    "artifacts": {"pdf": true, "text": true}
+  },
+  "callback_source_reused": {
+    "processor": "normatividad-worker-1",
+    "finalize_queue": true,
+    "artifacts": {
+      "pdf": {"available": true, "origin": "source_reused", "written": false, "reused_source": true},
+      "text": {"available": true, "origin": "generated", "written": true}
+    },
+    "execution": {"schema": "ocr.execution.v1", "core_version": "0.4.0", "node_id": "ocr-node-01"},
+    "metrics": {"schema": "ocr.telemetry.document.v1", "summary": {"processed_pages": 0}}
+  },
+  "callback_cached_not_written": {
+    "processor": "normatividad-worker-1",
+    "finalize_queue": true,
+    "artifacts": {
+      "pdf": {"available": true, "origin": "generated", "written": false},
+      "text": true
+    }
+  }
+}

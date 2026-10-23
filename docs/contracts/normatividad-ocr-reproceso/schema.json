@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "normatividad.ocr.contracts.reproceso",
+  "title": "Contrato aditivo de reproceso y trazabilidad OCR de Normatividad",
+  "$defs": {
+    "artifactFlags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pdf", "text", "md"],
+      "properties": {
+        "pdf": {"type": "boolean"},
+        "text": {"type": "boolean"},
+        "md": {"type": "boolean"}
+      }
+    },
+    "executionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempt", "requested_artifacts", "reprocess_artifacts", "pdf_on_skip", "telemetry_level"],
+      "properties": {
+        "campaign_id": {"type": ["integer", "null"]},
+        "attempt": {"type": "integer", "minimum": 1},
+        "requested_artifacts": {"$ref": "#/$defs/artifactFlags"},
+        "reprocess_artifacts": {"$ref": "#/$defs/artifactFlags"},
+        "pdf_on_skip": {"enum": ["copy", "reuse"]},
+        "telemetry_level": {"enum": ["none", "summary", "summary_and_pages"]}
+      }
+    },
+    "artifactDescriptor": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["available", "origin", "written"],
+      "properties": {
+        "available": {"type": "boolean"},
+        "origin": {"enum": ["generated", "source_reused"]},
+        "written": {"type": "boolean"},
+        "reused_source": {"type": "boolean"}
+      }
+    }
+  },
+  "type": "object",
+  "properties": {
+    "execution_request": {"$ref": "#/$defs/executionRequest"}
+  }
+}

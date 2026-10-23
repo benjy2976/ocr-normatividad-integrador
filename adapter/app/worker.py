@@ -40,6 +40,8 @@ Variables de entorno relevantes:
 """
 
 import logging
+import hashlib
+import json
 import multiprocessing as mp
 import os
 import signal
@@ -70,6 +72,19 @@ MAX_CONSECUTIVE_ERRORS: int = int(os.getenv("OCR_WORKER_MAX_CONSECUTIVE_ERRORS",
 SHARED_CACHE_DIR = Path(os.getenv("OCR_SHARED_CACHE_DIR", "/nfs-cache"))
 INBOX_DIR = SHARED_CACHE_DIR / "_inbox"
 SUPPORTED_ARTIFACTS = {"pdf": True, "text": True, "md": False}
+
+
+def _env_enabled(name: str, default: bool = False) -> bool:
+    fallback = "true" if default else "false"
+    return os.getenv(name, fallback).strip().lower() in {"1", "true", "yes"}
+
+
+FORCE_REPROCESS_ENABLED = _env_enabled("OCR_FORCE_REPROCESS_ENABLED")
+TELEMETRY_FORWARD_ENABLED = _env_enabled("OCR_TELEMETRY_FORWARD_ENABLED")
+SOURCE_REUSE_ENABLED = _env_enabled("OCR_SOURCE_REUSE_ENABLED")
+CORE_CAPABILITIES_REQUIRED = _env_enabled("OCR_CORE_CAPABILITIES_REQUIRED")
+QUEUE_HEARTBEAT_ENABLED = _env_enabled("OCR_QUEUE_HEARTBEAT_ENABLED")
+QUEUE_HEARTBEAT_SECONDS = max(10.0, float(os.getenv("OCR_QUEUE_HEARTBEAT_SECONDS", "60")))
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -175,8 +190,21 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
         _safe_meta(payload),
     )
 
+    capabilities = _required_capabilities(payload)
+    core_meta = _validate_core_capabilities(capabilities)
     processing_response = normatividad_client.mark_processing(queue_id, worker_name=worker_name)
     processing_payload = processing_response.get("data", processing_response)
+
+    processing_status = (
+        processing_payload.get("status") if isinstance(processing_payload, dict) else None
+    )
+    if processing_status != "processing":
+        raise RuntimeError(
+            f"mark_processing no confirmo processing para queue_id={queue_id}: "
+            f"status={processing_status}"
+        )
+    if isinstance(processing_payload, dict) and processing_payload.get("queue_id"):
+        payload = processing_payload
 
     worker_logger.info(
         "queue_id=%s marcado processing | processing_meta=%s",
@@ -185,6 +213,7 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
     )
 
     requested_artifacts = _requested_artifacts(payload)
+    reprocess_artifacts = _reprocess_artifacts(payload)
     expected_artifacts = _expected_artifacts(payload)
     unsupported_artifacts = {
         name: True
@@ -215,6 +244,7 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
                 "unsupported_artifacts": unsupported_artifacts,
                 "expected_artifacts": expected_artifacts,
             },
+            processor=worker_name,
         )
         return
 
@@ -227,11 +257,13 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
     pdf_cached = _artifact_cached(payload, "pdf", shared_pdf_path)
     text_cached = _artifact_cached(payload, "text", shared_text_path)
 
-    needs_pdf = bool(planned_artifacts.get("pdf") and not pdf_cached)
-    needs_text = bool(planned_artifacts.get("text") and not text_cached)
+    force_pdf = bool(FORCE_REPROCESS_ENABLED and reprocess_artifacts.get("pdf"))
+    force_text = bool(FORCE_REPROCESS_ENABLED and reprocess_artifacts.get("text"))
+    needs_pdf = bool(planned_artifacts.get("pdf") and (force_pdf or not pdf_cached))
+    needs_text = bool(planned_artifacts.get("text") and (force_text or not text_cached))
 
     produced_artifacts: dict[str, bool] = {}
-    reportable_artifacts: dict[str, bool] = {}
+    reportable_artifacts: dict[str, object] = {}
     preflight: dict | None = None
     job_result: dict | None = None
 
@@ -249,20 +281,40 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
                     raise RuntimeError(
                         "La cola solicita PDF pero artifacts.expected.pdf_path no fue provisto"
                     )
-                job_artifacts["pdf"] = {"path": str(shared_pdf_path)}
+                job_artifacts["pdf"] = {
+                    "path": str(shared_pdf_path),
+                    "overwrite": force_pdf,
+                }
             if needs_text:
                 if shared_text_path is None:
                     raise RuntimeError(
                         "La cola solicita TEXT pero artifacts.expected.text_path no fue provisto"
                     )
-                job_artifacts["text"] = {"path": str(shared_text_path)}
+                job_artifacts["text"] = {
+                    "path": str(shared_text_path),
+                    "overwrite": force_text,
+                }
+
+            core_options = {
+                "metadata": _text_artifact_metadata(payload, shared_pdf_path, shared_text_path),
+            }
+            execution_request = _execution_request(payload)
+            if SOURCE_REUSE_ENABLED:
+                core_options["pdf_on_skip"] = str(
+                    execution_request.get("pdf_on_skip") or "reuse"
+                )
+            if TELEMETRY_FORWARD_ENABLED:
+                core_options["telemetry"] = {
+                    "level": str(
+                        execution_request.get("telemetry_level") or "summary_and_pages"
+                    )
+                }
 
             job_id = ocr_core_client.submit_job(
                 inbox_pdf,
-                options={
-                    "metadata": _text_artifact_metadata(payload, shared_pdf_path, shared_text_path),
-                },
+                options=core_options,
                 artifacts=job_artifacts,
+                idempotency_key=_idempotency_key(payload, core_options),
             )
             worker_logger.info("Job enviado a ocr-core queue_id=%s | job_id=%s", queue_id, job_id)
             _submit_shadow_job(
@@ -272,7 +324,17 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
                 needs_text=needs_text,
                 worker_logger=worker_logger,
             )
-            job_result = ocr_core_client.wait_for_job(job_id)
+            heartbeat = None
+            if QUEUE_HEARTBEAT_ENABLED:
+                heartbeat = lambda: normatividad_client.heartbeat(
+                    queue_id,
+                    worker_name=worker_name,
+                )
+            job_result = ocr_core_client.wait_for_job(
+                job_id,
+                heartbeat=heartbeat,
+                heartbeat_seconds=QUEUE_HEARTBEAT_SECONDS,
+            )
             preflight = job_result.get("preflight")
 
             worker_logger.info(
@@ -288,6 +350,10 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
                     reason_code=(preflight or {}).get("reason_code"),
                     duration_ms=elapsed_ms,
                     preflight=preflight,
+                    processor=worker_name,
+                    execution=job_result.get("execution") if TELEMETRY_FORWARD_ENABLED else None,
+                    metrics=job_result.get("metrics") if TELEMETRY_FORWARD_ENABLED else None,
+                    engine_response_json={"ocr_core_job": job_result},
                 )
                 worker_logger.info(
                     "queue_id=%s bloqueado por preflight | reason=%s",
@@ -311,18 +377,37 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
                         reason_code=fallback_preflight["reason_code"],
                         duration_ms=elapsed_ms,
                         preflight=fallback_preflight,
+                        processor=worker_name,
+                        execution=job_result.get("execution") if TELEMETRY_FORWARD_ENABLED else None,
+                        metrics=job_result.get("metrics") if TELEMETRY_FORWARD_ENABLED else None,
+                        engine_response_json={"ocr_core_job": job_result},
                     )
                     worker_logger.warning(
                         "queue_id=%s bloqueado por firma detectada durante OCR", queue_id,
                     )
                     return
-                raise RuntimeError(f"ocr-core job {job_id} failed: {error_msg}")
+                elapsed_ms = int((time.monotonic() - start_time) * 1000)
+                normatividad_client.fail(
+                    queue_id,
+                    f"ocr-core job {job_id} failed: {error_msg}",
+                    duration_ms=elapsed_ms,
+                    processor=worker_name,
+                    response_payload_json={"ocr_core_job_id": job_id},
+                    engine_response_json={"ocr_core_job": job_result},
+                    execution=job_result.get("execution") if TELEMETRY_FORWARD_ENABLED else None,
+                    metrics=job_result.get("metrics") if TELEMETRY_FORWARD_ENABLED else None,
+                )
+                return
 
             # status == "done": preflight.decision fue "skip" (texto nativo
             # util) o "process" (se corrio OCR). En ambos casos ocr-core ya
             # escribio los artefactos solicitados en el destino indicado.
             decision = (preflight or {}).get("decision")
-            if decision == "skip" and not needs_text:
+            artifacts_info = job_result.get("artifacts") or {}
+            reused_pdf = bool(
+                needs_pdf and (artifacts_info.get("pdf") or {}).get("reused_source")
+            )
+            if decision == "skip" and not needs_text and not reused_pdf:
                 # Regla de negocio historica: si solo se pidio PDF y el
                 # documento ya tenia texto util, no hay nada nuevo que
                 # aportar - se reporta como skip, no como artefacto producido.
@@ -333,24 +418,44 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
                     reason_code=(preflight or {}).get("reason_code") or "useful_text_present",
                     duration_ms=elapsed_ms,
                     preflight=preflight,
+                    processor=worker_name,
+                    execution=job_result.get("execution") if TELEMETRY_FORWARD_ENABLED else None,
+                    metrics=job_result.get("metrics") if TELEMETRY_FORWARD_ENABLED else None,
+                    engine_response_json={"ocr_core_job": job_result},
                 )
                 worker_logger.info(
                     "queue_id=%s omitido: ya tenia texto util y solo se pidio PDF", queue_id,
                 )
                 return
 
-            artifacts_info = job_result.get("artifacts") or {}
             if needs_pdf and (artifacts_info.get("pdf") or {}).get("written"):
                 produced_artifacts["pdf"] = True
                 pdf_cached = True
             if needs_text and (artifacts_info.get("text") or {}).get("written"):
                 produced_artifacts["text"] = True
                 text_cached = True
+            if reused_pdf:
+                reportable_artifacts["pdf"] = {
+                    "available": True,
+                    "origin": "source_reused",
+                    "written": False,
+                    "reused_source": True,
+                }
 
-        if requested_artifacts.get("pdf") and pdf_cached:
-            reportable_artifacts["pdf"] = True
-        if requested_artifacts.get("text") and text_cached:
-            reportable_artifacts["text"] = True
+        # Si Normatividad envio execution_request, un artefacto servido desde cache se informa como no escrito
+        # para que Normatividad no lo registre como una version nueva (plan 1.4.1.5).
+        reprocess_request = bool(_execution_request(payload))
+        for name, cached in (("pdf", pdf_cached), ("text", text_cached)):
+            if not requested_artifacts.get(name) or not cached or name in reportable_artifacts:
+                continue
+            if reprocess_request and not produced_artifacts.get(name):
+                reportable_artifacts[name] = {
+                    "available": True,
+                    "origin": "generated",
+                    "written": False,
+                }
+            else:
+                reportable_artifacts[name] = True
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
         response_payload = {
@@ -358,6 +463,11 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
             "planned_artifacts": planned_artifacts,
             "unsupported_artifacts": unsupported_artifacts,
             "produced_artifacts": produced_artifacts,
+            "reprocessed_artifacts": {
+                "pdf": bool(force_pdf and produced_artifacts.get("pdf")),
+                "text": bool(force_text and produced_artifacts.get("text")),
+                "md": False,
+            },
             "reported_artifacts": reportable_artifacts,
             "expected_artifacts": expected_artifacts,
             "storage": {
@@ -367,6 +477,7 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
             },
             "preflight": preflight,
             "ocr_core_job_id": job_result.get("job_id") if job_result else None,
+            "ocr_core_meta": core_meta,
         }
         engine_response = {
             "ocr_core_job": job_result,
@@ -398,6 +509,8 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
                 artifacts=reportable_artifacts,
                 response_payload_json=response_payload,
                 engine_response_json=engine_response,
+                execution=job_result.get("execution") if job_result and TELEMETRY_FORWARD_ENABLED else None,
+                metrics=job_result.get("metrics") if job_result and TELEMETRY_FORWARD_ENABLED else None,
             )
             worker_logger.info(
                 "Item queue_id=%s reportado por /artifacts | artifacts=%s",
@@ -417,7 +530,12 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
         worker_logger.warning(
             "queue_id=%s sin archivo fuente disponible: %s", queue_id, exc.message,
         )
-        normatividad_client.fail(queue_id, exc.message, duration_ms=elapsed_ms)
+        normatividad_client.fail(
+            queue_id,
+            exc.message,
+            duration_ms=elapsed_ms,
+            processor=worker_name,
+        )
 
     finally:
         _cleanup(inbox_pdf)
@@ -446,6 +564,74 @@ def _requested_artifacts(payload: dict) -> dict[str, bool]:
         "text": bool(requested.get("text")),
         "md": bool(requested.get("md")),
     }
+
+
+def _execution_request(payload: dict) -> dict:
+    value = payload.get("execution_request")
+    return value if isinstance(value, dict) else {}
+
+
+def _reprocess_artifacts(payload: dict) -> dict[str, bool]:
+    value = _execution_request(payload).get("reprocess_artifacts")
+    if not isinstance(value, dict):
+        return {"pdf": False, "text": False, "md": False}
+    return {name: bool(value.get(name)) for name in ("pdf", "text", "md")}
+
+
+def _idempotency_key(payload: dict, options: dict[str, Any]) -> str:
+    source = payload.get("source") if isinstance(payload.get("source"), dict) else {}
+    queue = payload.get("queue") if isinstance(payload.get("queue"), dict) else {}
+    attempt = _execution_request(payload).get("attempt", queue.get("attempts", 0))
+    fingerprint_payload = {
+        "requested": _requested_artifacts(payload),
+        "reprocess": _reprocess_artifacts(payload),
+        "options": options,
+    }
+    fingerprint = hashlib.sha256(
+        json.dumps(
+            fingerprint_payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()[:32]
+    return f"{payload.get('queue_id') or payload.get('id')}:{attempt}:{source.get('md5') or 'unknown'}:{fingerprint}"
+
+
+class CoreCapabilityError(RuntimeError):
+    """El core activo no publica una capacidad que exigen los flags encendidos.
+
+    Es un error de configuracion del despliegue, no del documento: nunca se reporta
+    como fallo del item.
+    """
+
+
+def _required_capabilities(payload: dict) -> set[str]:
+    required = set()
+    if SOURCE_REUSE_ENABLED:
+        required.add("pdf_on_skip_reuse")
+    if TELEMETRY_FORWARD_ENABLED:
+        required.add("telemetry_schema")
+        required.add("execution_provenance")
+    return required
+
+
+def _validate_core_capabilities(required: set[str]) -> dict:
+    if not required and not CORE_CAPABILITIES_REQUIRED:
+        return {}
+    meta = ocr_core_client.get_meta()
+    capabilities = meta.get("capabilities") if isinstance(meta, dict) else {}
+    capabilities = capabilities if isinstance(capabilities, dict) else {}
+    missing = sorted(name for name in required if not capabilities.get(name))
+    if missing:
+        raise CoreCapabilityError(f"ocr-core no publica capacidades requeridas: {missing}")
+    logger.info(
+        "Capacidades ocr-core verificadas | release=%s version=%s capabilities=%s",
+        meta.get("release_id"),
+        meta.get("version"),
+        sorted(name for name, enabled in capabilities.items() if enabled),
+    )
+    return meta
 
 
 def _expected_artifacts(payload: dict) -> dict:
@@ -659,6 +845,9 @@ def _run_worker_loop(worker_name: str) -> None:
 
     while not _stop_requested:
         try:
+            # Se valida antes de tomar un item: con un core sin capacidades el worker
+            # no consume la cola (cuenta como error consecutivo y termina deteniendose).
+            _validate_core_capabilities(_required_capabilities({}))
             item = normatividad_client.pull_next(worker_name=worker_name)
 
             if item is None:
@@ -674,11 +863,20 @@ def _run_worker_loop(worker_name: str) -> None:
             item_start = time.monotonic()
             try:
                 _process_item(item, worker_name, worker_logger)
+            except CoreCapabilityError as exc:
+                # El item queda leased y vuelve a pending cuando vence su lease.
+                worker_logger.critical("queue_id=%s no procesado: %s", queue_id, exc)
+                _interruptible_sleep(POLL_INTERVAL)
             except Exception as exc:
                 worker_logger.exception("Error procesando queue_id=%s: %s", queue_id, exc)
                 elapsed_ms = int((time.monotonic() - item_start) * 1000)
                 try:
-                    normatividad_client.fail(queue_id, str(exc), duration_ms=elapsed_ms)
+                    normatividad_client.fail(
+                        queue_id,
+                        str(exc),
+                        duration_ms=elapsed_ms,
+                        processor=worker_name,
+                    )
                 except Exception as fail_exc:
                     worker_logger.error(
                         "No se pudo reportar fallo a Normatividad (queue_id=%s): %s",
@@ -726,11 +924,20 @@ def process_single_item(
 
     try:
         _process_item(item, effective_worker_name, worker_logger)
+    except CoreCapabilityError as exc:
+        worker_logger.critical("queue_id=%s no procesado: %s", queue_id, exc)
+        if raise_errors:
+            raise
     except Exception as exc:
         worker_logger.exception("Error procesando queue_id=%s: %s", queue_id, exc)
         elapsed_ms = int((time.monotonic() - item_start) * 1000)
         try:
-            normatividad_client.fail(queue_id, str(exc), duration_ms=elapsed_ms)
+            normatividad_client.fail(
+                queue_id,
+                str(exc),
+                duration_ms=elapsed_ms,
+                processor=effective_worker_name,
+            )
         except Exception as fail_exc:
             worker_logger.error(
                 "No se pudo reportar fallo a Normatividad (queue_id=%s): %s",
@@ -775,6 +982,7 @@ def run_worker_once(worker_name: str | None = None) -> bool:
 
     INBOX_DIR.mkdir(parents=True, exist_ok=True)
 
+    _validate_core_capabilities(_required_capabilities({}))
     item = normatividad_client.pull_next(worker_name=effective_worker_name)
     if item is None:
         worker_logger.info("Cola vacia: no se encontro item para procesar.")
