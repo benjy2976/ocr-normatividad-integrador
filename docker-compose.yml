@@ -51,7 +51,9 @@ services:
       - ocr_nfs_cache:/nfs-cache
     networks:
       - grh_network
-    restart: unless-stopped
+    # El entorno local puede impedir el autoarranque del consumidor sin
+    # cambiar la política de los demás servicios del repositorio.
+    restart: "${OCR_WORKER_RESTART_POLICY:-unless-stopped}"
 
   # ─────────────────────────────────────────────────────────────────────────
   # opensearch: motor de busqueda documental

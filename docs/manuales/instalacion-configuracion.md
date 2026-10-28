@@ -74,6 +74,7 @@ python worker_main.py download-source <queue_id> --output /tmp/test.pdf
 | `OCR_WORKER_CONCURRENCY` | 1 | Consumidores paralelos dentro del mismo servicio |
 | `OCR_POLL_INTERVAL_SECONDS` | 10 | Segundos entre polls si la cola está vacía |
 | `OCR_WORKER_ENABLED` | true | `false` deshabilita sin borrar el contenedor |
+| `OCR_WORKER_RESTART_POLICY` | `unless-stopped` | Política Docker del worker; usar `no` junto con `OCR_WORKER_ENABLED=false` para impedir el autoarranque |
 | `OCR_CALLBACK_TIMEOUT_SECONDS` | 30 | Timeout HTTP para callbacks a Normatividad |
 | `OCR_DOWNLOAD_TIMEOUT_SECONDS` | 120 | Timeout HTTP para descarga del PDF fuente |
 | `OCR_WORKER_MAX_CONSECUTIVE_ERRORS` | 20 | Errores seguidos antes de detener el proceso |
