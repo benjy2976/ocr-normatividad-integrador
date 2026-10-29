@@ -15,6 +15,20 @@ defecto. Este documento no autoriza encender el loop contra la cola real.
   Markdown se escribe en `artifacts.expected.md_path`, entra en la clave
   idempotente y se reporta como `md` en `/artifacts`.
 
+## Logs y purga
+
+El worker registra una línea por cada respuesta `4xx` de Normatividad con su
+mensaje (`message` o el primer error de validación), en una sola línea y hasta
+500 caracteres; nunca el cuerpo completo, que puede contener datos del
+documento. Las capacidades del core se registran solo cuando cambia el release
+o su conjunto de capacidades.
+
+Docker rota el log del contenedor (`logging` en `docker-compose.yml`): al llegar
+a `OCR_WORKER_LOG_MAX_SIZE` (10 MB) abre un archivo nuevo y elimina el más
+antiguo, conservando como máximo `OCR_WORKER_LOG_MAX_FILE` (5) archivos. La
+configuración se aplica al recrear el contenedor, lo que además descarta el log
+acumulado sin límite.
+
 ## Requisitos para que Normatividad solicite `md`
 
 Antes de encolar con `artifacts.requested.md=true`, Normatividad debe:

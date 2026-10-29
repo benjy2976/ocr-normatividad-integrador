@@ -54,6 +54,13 @@ services:
     # El entorno local puede impedir el autoarranque del consumidor sin
     # cambiar la política de los demás servicios del repositorio.
     restart: "${OCR_WORKER_RESTART_POLICY:-unless-stopped}"
+    # Rotación de logs: al llegar a max-size Docker abre un archivo nuevo y
+    # elimina el más antiguo; nunca conserva más de max-file archivos.
+    logging:
+      driver: json-file
+      options:
+        max-size: "${OCR_WORKER_LOG_MAX_SIZE:-10m}"
+        max-file: "${OCR_WORKER_LOG_MAX_FILE:-5}"
 
   # ─────────────────────────────────────────────────────────────────────────
   # opensearch: motor de busqueda documental

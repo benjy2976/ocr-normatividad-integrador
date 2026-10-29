@@ -655,6 +655,9 @@ def _idempotency_key(payload: dict, options: dict[str, Any]) -> str:
     return f"{payload.get('queue_id') or payload.get('id')}:{attempt}:{source.get('md5') or 'unknown'}:{fingerprint}"
 
 
+_last_capabilities_logged: tuple | None = None
+
+
 class CoreCapabilityError(RuntimeError):
     """El core activo no publica una capacidad que exigen los flags encendidos.
 
@@ -691,12 +694,21 @@ def _validate_core_capabilities(required: set[str]) -> dict:
     missing = sorted(name for name in required if not _capability_present(capabilities, name))
     if missing:
         raise CoreCapabilityError(f"ocr-core no publica capacidades requeridas: {missing}")
-    logger.info(
-        "Capacidades ocr-core verificadas | release=%s version=%s capabilities=%s",
+    global _last_capabilities_logged
+    # Se registra una vez por release y conjunto de capacidades, no en cada
+    # consulta de la cola: evita una línea cada pocos segundos por consumidor.
+    signature = (
         meta.get("release_id"),
         meta.get("version"),
-        sorted(name for name, enabled in capabilities.items() if enabled),
+        tuple(sorted(name for name, enabled in capabilities.items() if enabled)),
     )
+    if signature != _last_capabilities_logged:
+        logger.info(
+            "Capacidades ocr-core verificadas | release=%s version=%s capabilities=%s",
+            *signature[:2],
+            list(signature[2]),
+        )
+        _last_capabilities_logged = signature
     return meta
 
 

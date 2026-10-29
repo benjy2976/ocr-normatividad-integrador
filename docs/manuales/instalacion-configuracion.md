@@ -65,6 +65,8 @@ python worker_main.py download-source <queue_id> --output /tmp/test.pdf
 | `OCR_CORE_CAPABILITIES_REQUIRED` | false | Falla cerrado si faltan capacidades requeridas |
 | `OCR_QUEUE_HEARTBEAT_ENABLED` | false | Renueva el lease de jobs largos contra Munis nuevo |
 | `OCR_QUEUE_HEARTBEAT_SECONDS` | 60 | Intervalo entre renovaciones del lease |
+| `OCR_WORKER_LOG_MAX_SIZE` | `10m` | Tamaño máximo de cada archivo de log del worker antes de rotar |
+| `OCR_WORKER_LOG_MAX_FILE` | 5 | Archivos de log conservados; al rotar se elimina el más antiguo |
 | `OCR_SHADOW_ENABLED` | false | Habilita la duplicación no autoritativa hacia el core candidato |
 | `OCR_SHADOW_CORE_URL` | `http://core-ocr:8000` | URL interna del core candidato |
 | `OCR_SHADOW_OUTPUT_ROOT` | `/shadow-cache/review` | Raíz privada usada en los destinos del candidato; nunca debe apuntar al NFS |

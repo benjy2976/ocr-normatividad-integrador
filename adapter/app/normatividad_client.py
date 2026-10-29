@@ -184,6 +184,32 @@ def _retry_delay(response: requests.Response | None, attempt: int) -> float:
     return min(delay, OCR_HTTP_RETRY_MAX_SECONDS)
 
 
+LOGGED_MESSAGE_MAX_LENGTH = 500
+
+
+def _response_message(response: requests.Response) -> str:
+    """Mensaje de error de Normatividad, en una línea y acotado.
+
+    Solo se toma `message` o el primer error de validación: nunca el cuerpo
+    completo, que puede incluir datos del documento.
+    """
+    try:
+        payload = response.json()
+    except ValueError:
+        text = response.text or ""
+    else:
+        text = ""
+        if isinstance(payload, dict):
+            errors = payload.get("errors")
+            if isinstance(errors, dict):
+                for messages in errors.values():
+                    if isinstance(messages, list) and messages:
+                        text = str(messages[0])
+                        break
+            text = text or str(payload.get("message") or "")
+    return " ".join(text.split())[:LOGGED_MESSAGE_MAX_LENGTH]
+
+
 def _request_with_retry(
     send,
     *,
@@ -211,6 +237,14 @@ def _request_with_retry(
                 response.close()
                 time.sleep(delay)
                 continue
+            if 400 <= response.status_code < 500:
+                logger.warning(
+                    "%s %s devolvio %s: %s",
+                    method,
+                    url,
+                    response.status_code,
+                    _response_message(response) or "(sin mensaje)",
+                )
             return response
         except requests.RequestException as exc:
             if attempt > OCR_HTTP_MAX_RETRIES:
