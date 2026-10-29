@@ -71,7 +71,6 @@ MAX_CONSECUTIVE_ERRORS: int = int(os.getenv("OCR_WORKER_MAX_CONSECUTIVE_ERRORS",
 
 SHARED_CACHE_DIR = Path(os.getenv("OCR_SHARED_CACHE_DIR", "/nfs-cache"))
 INBOX_DIR = SHARED_CACHE_DIR / "_inbox"
-SUPPORTED_ARTIFACTS = {"pdf": True, "text": True, "md": False}
 
 
 def _env_enabled(name: str, default: bool = False) -> bool:
@@ -85,6 +84,9 @@ SOURCE_REUSE_ENABLED = _env_enabled("OCR_SOURCE_REUSE_ENABLED")
 CORE_CAPABILITIES_REQUIRED = _env_enabled("OCR_CORE_CAPABILITIES_REQUIRED")
 QUEUE_HEARTBEAT_ENABLED = _env_enabled("OCR_QUEUE_HEARTBEAT_ENABLED")
 QUEUE_HEARTBEAT_SECONDS = max(10.0, float(os.getenv("OCR_QUEUE_HEARTBEAT_SECONDS", "60")))
+# Quien encola decide qué artefactos pide; md exige un core que anuncie su esquema.
+MARKDOWN_SCHEMA = "ocr.markdown.document.v1"
+SUPPORTED_ARTIFACTS = {"pdf": True, "text": True, "md": True}
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -234,7 +236,7 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
         )
         normatividad_client.skip(
             queue_id,
-            message="Cola omitida: este worker solo atiende artefactos PDF/TEXT",
+            message="Cola omitida: este worker no atiende los artefactos solicitados",
             reason_code="no_supported_artifacts_requested",
             duration_ms=0,
             preflight={
@@ -254,13 +256,17 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
 
     shared_pdf_path = _resolve_expected_artifact_path(payload, "pdf")
     shared_text_path = _resolve_expected_artifact_path(payload, "text")
+    shared_md_path = _resolve_expected_artifact_path(payload, "md")
     pdf_cached = _artifact_cached(payload, "pdf", shared_pdf_path)
     text_cached = _artifact_cached(payload, "text", shared_text_path)
+    md_cached = _artifact_cached(payload, "md", shared_md_path)
 
     force_pdf = bool(FORCE_REPROCESS_ENABLED and reprocess_artifacts.get("pdf"))
     force_text = bool(FORCE_REPROCESS_ENABLED and reprocess_artifacts.get("text"))
+    force_md = bool(FORCE_REPROCESS_ENABLED and reprocess_artifacts.get("md"))
     needs_pdf = bool(planned_artifacts.get("pdf") and (force_pdf or not pdf_cached))
     needs_text = bool(planned_artifacts.get("text") and (force_text or not text_cached))
+    needs_md = bool(planned_artifacts.get("md") and (force_md or not md_cached))
 
     produced_artifacts: dict[str, bool] = {}
     reportable_artifacts: dict[str, object] = {}
@@ -268,7 +274,7 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
     job_result: dict | None = None
 
     try:
-        if needs_pdf or needs_text:
+        if needs_pdf or needs_text or needs_md:
             normatividad_client.download_source(queue_id, inbox_pdf)
             worker_logger.info(
                 "PDF descargado a inbox compartido queue_id=%s | %s (%d bytes)",
@@ -294,9 +300,21 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
                     "path": str(shared_text_path),
                     "overwrite": force_text,
                 }
+            if needs_md:
+                if shared_md_path is None:
+                    raise RuntimeError(
+                        "La cola solicita MD pero artifacts.expected.md_path no fue provisto"
+                    )
+                job_artifacts["md"] = {
+                    "path": str(shared_md_path),
+                    "overwrite": force_md,
+                }
 
             core_options = {
-                "metadata": _text_artifact_metadata(payload, shared_pdf_path, shared_text_path),
+                "metadata": _text_artifact_metadata(
+                    payload, shared_pdf_path, shared_text_path,
+                    shared_md_path if needs_md else None,
+                ),
             }
             execution_request = _execution_request(payload)
             if SOURCE_REUSE_ENABLED:
@@ -407,7 +425,7 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
             reused_pdf = bool(
                 needs_pdf and (artifacts_info.get("pdf") or {}).get("reused_source")
             )
-            if decision == "skip" and not needs_text and not reused_pdf:
+            if decision == "skip" and not needs_text and not needs_md and not reused_pdf:
                 # Regla de negocio historica: si solo se pidio PDF y el
                 # documento ya tenia texto util, no hay nada nuevo que
                 # aportar - se reporta como skip, no como artefacto producido.
@@ -434,6 +452,9 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
             if needs_text and (artifacts_info.get("text") or {}).get("written"):
                 produced_artifacts["text"] = True
                 text_cached = True
+            if needs_md and (artifacts_info.get("md") or {}).get("written"):
+                produced_artifacts["md"] = True
+                md_cached = True
             if reused_pdf:
                 reportable_artifacts["pdf"] = {
                     "available": True,
@@ -445,7 +466,7 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
         # Si Normatividad envio execution_request, un artefacto servido desde cache se informa como no escrito
         # para que Normatividad no lo registre como una version nueva (plan 1.4.1.5).
         reprocess_request = bool(_execution_request(payload))
-        for name, cached in (("pdf", pdf_cached), ("text", text_cached)):
+        for name, cached in (("pdf", pdf_cached), ("text", text_cached), ("md", md_cached)):
             if not requested_artifacts.get(name) or not cached or name in reportable_artifacts:
                 continue
             if reprocess_request and not produced_artifacts.get(name):
@@ -466,7 +487,7 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
             "reprocessed_artifacts": {
                 "pdf": bool(force_pdf and produced_artifacts.get("pdf")),
                 "text": bool(force_text and produced_artifacts.get("text")),
-                "md": False,
+                "md": bool(force_md and produced_artifacts.get("md")),
             },
             "reported_artifacts": reportable_artifacts,
             "expected_artifacts": expected_artifacts,
@@ -474,6 +495,7 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
                 "shared_cache_dir": str(SHARED_CACHE_DIR),
                 "resolved_pdf_path": str(shared_pdf_path) if shared_pdf_path else None,
                 "resolved_text_path": str(shared_text_path) if shared_text_path else None,
+                "resolved_md_path": str(shared_md_path) if shared_md_path else None,
             },
             "preflight": preflight,
             "ocr_core_job_id": job_result.get("job_id") if job_result else None,
@@ -496,6 +518,10 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
             if reportable_artifacts.get("text") and shared_text_path is None:
                 raise RuntimeError(
                     "La cola reporta text pero artifacts.expected.text_path no fue provisto"
+                )
+            if reportable_artifacts.get("md") and shared_md_path is None:
+                raise RuntimeError(
+                    "La cola reporta md pero artifacts.expected.md_path no fue provisto"
                 )
             normatividad_client.report_artifacts(
                 queue_id,
@@ -613,7 +639,16 @@ def _required_capabilities(payload: dict) -> set[str]:
     if TELEMETRY_FORWARD_ENABLED:
         required.add("telemetry_schema")
         required.add("execution_provenance")
+    if _requested_artifacts(payload)["md"]:
+        required.add("artifact_schemas.md")
     return required
+
+
+def _capability_present(capabilities: dict, name: str) -> bool:
+    if name == "artifact_schemas.md":
+        schemas = capabilities.get("artifact_schemas")
+        return isinstance(schemas, dict) and schemas.get("md") == MARKDOWN_SCHEMA
+    return bool(capabilities.get(name))
 
 
 def _validate_core_capabilities(required: set[str]) -> dict:
@@ -622,7 +657,7 @@ def _validate_core_capabilities(required: set[str]) -> dict:
     meta = ocr_core_client.get_meta()
     capabilities = meta.get("capabilities") if isinstance(meta, dict) else {}
     capabilities = capabilities if isinstance(capabilities, dict) else {}
-    missing = sorted(name for name in required if not capabilities.get(name))
+    missing = sorted(name for name in required if not _capability_present(capabilities, name))
     if missing:
         raise CoreCapabilityError(f"ocr-core no publica capacidades requeridas: {missing}")
     logger.info(
@@ -705,6 +740,7 @@ def _text_artifact_metadata(
     payload: dict,
     pdf_path: Path | None,
     text_path: Path | None,
+    md_path: Path | None = None,
 ) -> dict[str, Any]:
     """
     Arma el objeto `metadata` que viaja como passthrough opaco dentro de
@@ -744,7 +780,7 @@ def _text_artifact_metadata(
         or regulation_file.get("file_md5")
     )
 
-    return {
+    metadata = {
         "regulation_file_id": regulation_file_id,
         "regulation_id": regulation_id,
         "source_md5": source_md5,
@@ -763,6 +799,11 @@ def _text_artifact_metadata(
         "regulation_type_id": document.get("regulations_tipo") or regulation.get("regulations_tipo"),
         "regulation_type_sigla_id": regulation.get("regulations_tipos_sigla_id"),
     }
+    # Solo los jobs que piden Markdown llevan su ruta: el JSONL y la clave de
+    # idempotencia de los jobs pdf/text no cambian.
+    if md_path is not None:
+        metadata["md_path"] = _shared_cache_relative_path(md_path)
+    return metadata
 
 
 def _shared_cache_relative_path(path: Path | None) -> str | None:

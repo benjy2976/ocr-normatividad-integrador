@@ -43,7 +43,7 @@ propio (`docs/proyecto.yml`, `project.kind: utility_component`).
 
 ## Reglas de negocio (resumen — detalle en `reglas-negocio.md`)
 
-- **RN-001**: sin `pdf` ni `text` solicitados → `skip` inmediato, sin
+- **RN-001**: sin `pdf`, `text` ni `md` solicitados → `skip` inmediato, sin
   descargar el PDF fuente.
 - **RN-002**: si el PDF ya tiene texto útil y solo se pidió `pdf` → `skip`,
   no se publica artefacto nuevo. `ocr-core` no puede inferir esto — es
@@ -61,6 +61,10 @@ propio (`docs/proyecto.yml`, `project.kind: utility_component`).
 - **RN-007**: el fan-out shadow es no autoritativo y de mejor esfuerzo; usa el
   NFS solo como entrada, escribe en el volumen privado del candidato y nunca
   altera callbacks, estados ni artefactos oficiales.
+- **RN-008**: `md` (Markdown de `ocr-core`, beta) se atiende cuando la cola lo
+  pide, sin interruptor; exige que `/meta` anuncie `ocr.markdown.document.v1`,
+  se escribe en `artifacts.expected.md_path` y, si el core no lo escribe, la
+  cola no se cierra.
 
 ## Reglas de seguridad operativa — este repo puede tocar producción real
 

@@ -8,6 +8,12 @@ defecto. Este documento no autoriza encender el loop contra la cola real.
 - Core antiguo + flags apagados: se conserva el comportamiento básico actual.
 - Core nuevo + flags apagados: defaults `copy`, sin telemetría.
 - `OCR_SOURCE_REUSE_ENABLED=true`: exige `pdf_on_skip_reuse` en `/meta`.
+- `md` (Markdown estructurado, beta) no tiene interruptor: se atiende cuando la
+  cola lo pide. Exige que `/meta` anuncie
+  `artifact_schemas.md=ocr.markdown.document.v1` (ocr-core 0.5.0+); con un core
+  anterior el worker se detiene antes de marcar el item como `processing`. El
+  Markdown se escribe en `artifacts.expected.md_path`, entra en la clave
+  idempotente y se reporta como `md` en `/artifacts`.
 - `OCR_TELEMETRY_FORWARD_ENABLED=true`: exige esquema y procedencia en `/meta`.
   El bloque `execution` se reenvía sin reinterpretarlo, incluida la identidad
   de host/instancia, el motor y la configuración versionada del pipeline.
