@@ -14,6 +14,24 @@ defecto. Este documento no autoriza encender el loop contra la cola real.
   anterior el worker se detiene antes de marcar el item como `processing`. El
   Markdown se escribe en `artifacts.expected.md_path`, entra en la clave
   idempotente y se reporta como `md` en `/artifacts`.
+
+## Requisitos para que Normatividad solicite `md`
+
+Antes de encolar con `artifacts.requested.md=true`, Normatividad debe:
+
+1. enviar `artifacts.expected.md_path` con el mismo patrón que los otros
+   artefactos (`{año}/{id}/{md5}.md`); si falta, el item falla con un mensaje
+   explícito;
+2. aceptar `md` en el callback `/artifacts`, igual que `pdf` y `text` (booleano
+   o descriptor `available/origin/written`), y registrar su ruta;
+3. informar `has_md` en el payload para que un Markdown existente no se vuelva
+   a solicitar.
+
+El título visible dentro del Markdown es hoy el `file_name` del archivo
+(`queue.regulation_file.file_name`) o, si no llega, `normatividad_{queue_id}`.
+Está planificado (ocr-core `0.5.1`) que Normatividad envíe el título ya
+compuesto y que el integrador lo reenvíe al core como `options.document_title`;
+sin ese dato, el integrador generará un fallback solo con datos que ya recibe.
 - `OCR_TELEMETRY_FORWARD_ENABLED=true`: exige esquema y procedencia en `/meta`.
   El bloque `execution` se reenvía sin reinterpretarlo, incluida la identidad
   de host/instancia, el motor y la configuración versionada del pipeline.
