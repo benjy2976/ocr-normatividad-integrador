@@ -31,7 +31,8 @@ propio (`docs/proyecto.yml`, `project.kind: utility_component`).
 | Si vas a... | Leer |
 |---|---|
 | Entender el dominio de Normatividad (estados de cola, reglas de `enqueue()`, las dos rutas de storage que se confunden, seguridad operativa al probar contra producción real) | `context.md` |
-| Tocar `adapter/app/worker.py` o cualquier decisión de negocio | `docs/documentacion-tecnica/reglas-negocio.md` (RN-001 a RN-006, trazables contra código) |
+| Tocar `adapter/app/worker.py` o cualquier decisión de negocio | `docs/documentacion-tecnica/reglas-negocio.md` (RN-001 a RN-011, trazables contra código) |
+| Saber por qué una regla o un diseño es como es, antes de cambiarlo | `docs/documentacion-tecnica/decisiones/README.md` (índice de decisiones) |
 | Entender el flujo end-to-end de un item de cola | `docs/documentacion-tecnica/diseno/secuencias/SEQ-001-ciclo-vida-item-cola.md` (diagrama de secuencia) |
 | Ver arquitectura general y la decisión de esquema de búsqueda | `docs/documentacion-tecnica/arquitectura/arquitectura.md` |
 | Instalar, configurar o ver variables de entorno | `docs/manuales/instalacion-configuracion.md` |
@@ -61,10 +62,12 @@ propio (`docs/proyecto.yml`, `project.kind: utility_component`).
 - **RN-007**: el fan-out shadow es no autoritativo y de mejor esfuerzo; usa el
   NFS solo como entrada, escribe en el volumen privado del candidato y nunca
   altera callbacks, estados ni artefactos oficiales.
-- **RN-008**: `md` (Markdown de `ocr-core`, beta) se atiende cuando la cola lo
+- **RN-008 a RN-010**: `pdf_on_skip=reuse` se reporta como `source_reused`;
+  clave idempotente canónica; solo se reporta mientras se conserva el lease.
+- **RN-011**: `md` (Markdown de `ocr-core`, beta) se atiende cuando la cola lo
   pide, sin interruptor; exige que `/meta` anuncie `ocr.markdown.document.v1`,
   se escribe en `artifacts.expected.md_path` y, si el core no lo escribe, la
-  cola no se cierra.
+  cola no se cierra. El porqué está en las decisiones 0001 y 0002.
 
 ## Reglas de seguridad operativa — este repo puede tocar producción real
 

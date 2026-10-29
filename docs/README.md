@@ -26,7 +26,8 @@
 | Ficha del componente | `proyecto/ficha-proyecto.md` | OK | — |
 | Ficha técnica del componente | `documentacion-tecnica/ficha-tecnica-componente.md` | OK | — |
 | Arquitectura | `documentacion-tecnica/arquitectura/arquitectura.md` | OK | — |
-| Reglas de negocio | `documentacion-tecnica/reglas-negocio.md` | OK | RN-001 a RN-006, trazables contra código real. |
+| Reglas de negocio | `documentacion-tecnica/reglas-negocio.md` | OK | RN-001 a RN-011, trazables contra código real. |
+| Registro de decisiones | `documentacion-tecnica/decisiones/` | OK | El porqué de las reglas y del diseño; índice en su `README.md`. |
 | Diagrama de secuencia | `documentacion-tecnica/diseno/secuencias/` | OK | No exigible para `utility_component`; adoptado igual (SEQ-001, extrapolado de `adapter/app/worker.py`). |
 | Seguridad | `documentacion-tecnica/seguridad/seguridad.md` | GAP REAL — URGENTE | `personal_data: true` con evidencia real; sin tratamiento formal aún. |
 | Instalación/configuración | `manuales/instalacion-configuracion.md` | OK | — |
