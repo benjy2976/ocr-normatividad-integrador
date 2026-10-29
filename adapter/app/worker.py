@@ -252,7 +252,11 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
 
     start_time = time.monotonic()
     token = uuid.uuid4().hex[:12]
-    inbox_pdf = INBOX_DIR / f"normatividad_{queue_id}_{token}.pdf"
+    # Carpeta única por item con el nombre real del documento: ocr-core deriva
+    # de ese nombre el título del Markdown.
+    inbox_pdf = (
+        INBOX_DIR / f"normatividad_{queue_id}_{token}" / f"{_document_name(payload)}.pdf"
+    )
 
     shared_pdf_path = _resolve_expected_artifact_path(payload, "pdf")
     shared_text_path = _resolve_expected_artifact_path(payload, "text")
@@ -565,6 +569,24 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
 
     finally:
         _cleanup(inbox_pdf)
+        try:
+            inbox_pdf.parent.rmdir()
+        except OSError:
+            pass
+
+
+def _document_name(payload: dict) -> str:
+    """Nombre del documento sin extensión, apto como nombre de archivo."""
+    queue = payload.get("queue") if isinstance(payload.get("queue"), dict) else {}
+    regulation_file = (
+        queue.get("regulation_file")
+        if isinstance(queue.get("regulation_file"), dict)
+        else {}
+    )
+    raw = str(regulation_file.get("file_name") or "").replace("\\", "/")
+    name = Path(raw.rsplit("/", 1)[-1]).stem
+    name = "".join(ch for ch in name if ch.isprintable()).strip(" .")[:120]
+    return name or f"normatividad_{payload.get('queue_id') or payload.get('id')}"
 
 
 def _safe_meta(item: dict) -> str:

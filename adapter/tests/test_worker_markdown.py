@@ -103,6 +103,8 @@ class WorkerMarkdownTest(unittest.TestCase):
             )
             calls["cache"] = cache
             worker._process_item(item, "worker-1", logger)
+            inbox = cache / "_inbox"
+            calls["inbox_left"] = sorted(inbox.iterdir()) if inbox.exists() else []
         return calls
 
     def test_queue_without_markdown_keeps_the_current_behavior(self):
@@ -190,6 +192,27 @@ class WorkerMarkdownTest(unittest.TestCase):
     def test_markdown_without_expected_path_fails_clearly(self):
         with self.assertRaisesRegex(RuntimeError, "artifacts.expected.md_path"):
             self._run(self._item(md_path=False))
+
+    def test_document_name_comes_from_the_regulation_file(self):
+        def payload(file_name):
+            return {"queue_id": 7, "queue": {"regulation_file": {"file_name": file_name}}}
+
+        self.assertEqual(worker._document_name(payload("Resolución 045-2026.pdf")),
+                         "Resolución 045-2026")
+        self.assertEqual(worker._document_name(payload("2026/07/acta final.PDF")), "acta final")
+        self.assertEqual(worker._document_name(payload("C:\\docs\\informe.pdf")), "informe")
+        self.assertEqual(worker._document_name(payload(" \n ")), "normatividad_7")
+        self.assertEqual(worker._document_name({"queue_id": 7}), "normatividad_7")
+
+    def test_source_is_sent_with_the_document_name_and_inbox_is_cleaned(self):
+        item = self._item()
+        item["queue"] = {"regulation_file": {"file_name": "Resolución 045-2026.pdf"}}
+        calls = self._run(item)
+
+        source = calls["submit"].call_args.args[0]
+        self.assertEqual(source.name, "Resolución 045-2026.pdf")
+        self.assertEqual(source.parent.parent, calls["cache"] / "_inbox")
+        self.assertEqual(calls["inbox_left"], [])
 
     def test_jobs_without_markdown_keep_their_metadata_and_idempotency(self):
         item = self._item(md=False)
