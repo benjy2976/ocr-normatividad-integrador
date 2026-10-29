@@ -119,6 +119,97 @@ orden. Detalle en `k8s/README.md`.
 - Titularidad institucional preliminar, sin designación formal
   (`docs/documentacion-administrativa/titularidad/titularidad.md`).
 
+## Planes de trabajo y bitácoras
+
+Política obligatoria desde el 2026-10-29. Los planes son herramientas
+transitorias para llegar a un objetivo. **No son documentación** y no se
+versionan.
+
+### Dónde viven
+
+- **Plan que afecta solo a este repo:** `planes/<AAAA-MM>-<slug>/`, dentro del
+  repo e ignorado por git (`/planes/` en `.gitignore`).
+- **Plan que afecta a varios repos:**
+  `/home/administrador/new_ocr/planes/<AAAA-MM>-<slug>/`, fuera de todo repo.
+  Es una excepción autorizada por el usuario a la regla de no referenciar rutas
+  externas.
+- Cada carpeta contiene `plan.md`, `bitacora.md` y, si hace falta, `anexos/`
+  (ensayos, simuladores, datos de prueba).
+- El respaldo y la eliminación de los planes son responsabilidad del usuario.
+  Los agentes no borran planes.
+
+### Independencia de la documentación
+
+- **La documentación versionada nunca depende de un plan.** Ningún archivo
+  versionado (documentos, código, comentarios, README, `AGENTS.md`) cita un
+  plan ni la carpeta `planes/`. Un plan puede citar documentos; al revés,
+  nunca.
+- Un clon del repo **sin planes** debe bastar para conocer el estado del
+  proyecto: qué es, cómo es hoy, por qué es así, qué se comprobó, qué cambió en
+  cada versión y qué falta.
+- **Un agente solo lee el plan que el usuario le pidió ejecutar o reanudar.**
+  No recorre ni busca en otros planes, ni los usa como fuente de
+  documentación.
+- **Transición (2026-10):** algunos planes antiguos siguen versionados en
+  `docs/` mientras se retiran. No se toman como documentación vigente.
+
+### Cosecha
+
+En cada puerta de fase y al cerrar el plan, el agente propone y el usuario
+aprueba pasar lo durable a la documentación versionada:
+
+| Qué deja el plan | Dónde va |
+|---|---|
+| Decisiones, con su contexto y las alternativas descartadas | Registro de decisiones del repo |
+| Hechos sobre cómo es hoy el sistema | Documentos vigentes y gaps conocidos |
+| Trabajo pendiente que todavía no tiene pasos | Iniciativas del repo |
+| Lecciones operativas | Reglas de este `AGENTS.md` o runbooks |
+| Cambios de una versión | Notas de release |
+
+Un hecho sobre el sistema actual o una decisión nunca viven solo en un plan.
+
+### Bitácora (`bitacora.md`)
+
+Sirve para que cualquier agente pueda reanudar el trabajo si la sesión se
+corta.
+
+- **Estructura:** una cabecera **Estado actual**, que se reescribe en cada
+  cambio (plan, fase, último paso cerrado, paso en curso, siguiente paso y lo
+  que espera una decisión o autorización del usuario), y un **registro**
+  cronológico al que solo se agregan entradas al final.
+- **Entrada:** fecha y hora con zona, tipo, paso, agente (herramienta y
+  modelo), repo o directorio, acción, resultado con evidencia breve (commit,
+  imagen, `queue_id`, archivo) y cómo deshacerla.
+- **Tipos:** `ACCIÓN` (sin efectos externos); `INICIO` y luego `FIN` o
+  `FALLO`, alrededor de toda acción con efectos (commit, tag, Docker, `.env`,
+  despliegue, cola real); `DECISIÓN` (del usuario); `REANUDA` (un agente
+  retoma el plan); y `NOTA`. Un `INICIO` sin cierre indica que la acción pudo
+  quedar a medias.
+- **Nunca se registran** tokens, contraseñas, contenido de documentos ni datos
+  personales. Se identifican por referencia (`queue_id`, hash, ruta).
+- **Al reanudar:** leer el plan y su bitácora, verificar el estado real
+  (`git status`/`git log`, `docker ps`, archivos) antes de seguir y, ante un
+  `INICIO` sin cierre, comprobar qué pasó antes de reintentar.
+- **Autorizaciones:** quedan registradas como contexto, pero no se
+  transfieren. Una acción autorizada en una sesión anterior que no llegó a
+  ejecutarse se vuelve a confirmar con el usuario.
+- **Un solo agente a la vez por plan.**
+
+```markdown
+# Bitácora: <nombre del plan>
+
+## Estado actual
+- **Plan:** `plan.md` · **Fase:** … · **Último paso cerrado:** …
+- **Paso en curso:** … · **Siguiente paso:** …
+- **Espera al usuario:** … · **Actualizado:** <AAAA-MM-DD HH:MM ±zona> por <agente>
+
+## Registro
+
+### <AAAA-MM-DD HH:MM ±zona> · <TIPO> · paso <#>
+- **Agente:** … · **Dónde:** …
+- **Acción:** … · **Resultado:** … · **Deshacer:** …
+```
+
 ## Control de versiones
 
 **Ningún agente ejecuta `git commit`, `git push` ni `git tag` sin

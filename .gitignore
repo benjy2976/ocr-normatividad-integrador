@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 .env
 .venv/
+
+# Planes de trabajo: transitorios y fuera de git (ver "Planes de trabajo y bitácoras" en AGENTS.md).
+/planes/
