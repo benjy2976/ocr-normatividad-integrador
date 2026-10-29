@@ -1,3 +1,4 @@
+import json
 import logging
 import tempfile
 import unittest
@@ -213,6 +214,27 @@ class WorkerMarkdownTest(unittest.TestCase):
         self.assertEqual(source.name, "Resolución 045-2026.pdf")
         self.assertEqual(source.parent.parent, calls["cache"] / "_inbox")
         self.assertEqual(calls["inbox_left"], [])
+
+    def test_markdown_contract_fixtures_are_understood(self):
+        fixture_path = (
+            Path(__file__).parents[2]
+            / "docs/contracts/normatividad-ocr-markdown/fixtures.json"
+        )
+        fixtures = json.loads(fixture_path.read_text(encoding="utf-8"))
+        queue = fixtures["queue_with_markdown"]
+        reprocess = fixtures["queue_reprocess_markdown"]
+
+        self.assertTrue(worker._requested_artifacts(queue)["md"])
+        self.assertTrue(worker._reprocess_artifacts(reprocess)["md"])
+        with tempfile.TemporaryDirectory() as directory, patch.object(
+            worker, "SHARED_CACHE_DIR", Path(directory)
+        ):
+            md_path = worker._resolve_expected_artifact_path(queue, "md")
+            pdf_path = worker._resolve_expected_artifact_path(queue, "pdf")
+        self.assertEqual(md_path.parent, pdf_path.parent)
+        self.assertEqual(md_path.stem, queue["source"]["md5"])
+        self.assertEqual(md_path.suffix, ".md")
+        self.assertFalse(fixtures["callback_markdown_missing"]["finalize_queue"])
 
     def test_jobs_without_markdown_keep_their_metadata_and_idempotency(self):
         item = self._item(md=False)

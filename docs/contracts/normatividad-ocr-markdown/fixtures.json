@@ -1,0 +1,52 @@
+{
+  "queue_with_markdown": {
+    "queue_id": 300,
+    "status": "leased",
+    "source": {"md5": "df20df76c1e9579aa376c92955a05525"},
+    "artifacts": {
+      "requested": {"pdf": true, "text": true, "md": true},
+      "expected": {
+        "pdf_path": "2026/116343/df20df76c1e9579aa376c92955a05525.pdf",
+        "text_path": "2026/116343/df20df76c1e9579aa376c92955a05525.jsonl",
+        "md_path": "2026/116343/df20df76c1e9579aa376c92955a05525.md"
+      }
+    },
+    "has_pdf": false,
+    "has_text": false,
+    "has_md": false
+  },
+  "queue_reprocess_markdown": {
+    "queue_id": 301,
+    "source": {"md5": "df20df76c1e9579aa376c92955a05525"},
+    "artifacts": {
+      "requested": {"pdf": false, "text": false, "md": true},
+      "expected": {
+        "md_path": "2026/116343/df20df76c1e9579aa376c92955a05525.md"
+      }
+    },
+    "execution_request": {
+      "campaign_id": null,
+      "attempt": 1,
+      "requested_artifacts": {"pdf": false, "text": false, "md": true},
+      "reprocess_artifacts": {"pdf": false, "text": false, "md": true},
+      "pdf_on_skip": "copy",
+      "telemetry_level": "none"
+    },
+    "has_md": true
+  },
+  "callback_with_markdown": {
+    "processor": "normatividad-worker-1",
+    "finalize_queue": true,
+    "artifacts": {"pdf": true, "text": true, "md": true}
+  },
+  "callback_markdown_cached_not_written": {
+    "processor": "normatividad-worker-1",
+    "finalize_queue": true,
+    "artifacts": {"md": {"available": true, "origin": "generated", "written": false}}
+  },
+  "callback_markdown_missing": {
+    "processor": "normatividad-worker-1",
+    "finalize_queue": false,
+    "artifacts": {"pdf": true, "text": true}
+  }
+}
