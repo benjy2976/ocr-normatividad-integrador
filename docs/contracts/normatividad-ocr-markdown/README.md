@@ -93,15 +93,18 @@ HTML ejecutable: las tablas son tablas Markdown estándar (GFM).
 
 ## 3. Título dentro del Markdown
 
-La primera línea del cuerpo es `# título`. Hoy el título es el `file_name` del
-archivo (`queue.regulation_file.file_name`, sin extensión), por ejemplo
-`# 212000003462026`.
+La primera línea del cuerpo es `# título`. Desde ocr-core `0.5.1`, Normatividad
+lo define enviando, en el payload de un item que pide `md`:
 
-Está planificado (ocr-core `0.5.1`) que Normatividad envíe el título ya
-compuesto con su propia lógica —título de la norma, tomo, adenda u otros datos,
-separados por guion— y que el integrador lo reenvíe al core. El campo previsto
-es `document.markdown_title`; **no es obligatorio todavía** y se confirmará al
-implementar esa versión. El nombre del archivo `.md` no depende del título.
+| Campo | Obligatorio | Descripción |
+|---|---|---|
+| `document.markdown_title` | recomendado | Título ya compuesto por Normatividad con su propia lógica (título de la norma, tomo, adenda u otros datos, separados por guion). Una sola línea, hasta 500 caracteres; los saltos de línea se reemplazan por espacios y el exceso se recorta |
+
+Si no llega, el integrador compone un título con datos que el payload ya trae:
+`{id de la norma} - {id del archivo} - {reg_title}`, omitiendo las partes
+vacías; por ejemplo `132744 - 124200 - 000346-2026-GRH-ORA`. Si tampoco hay esos
+datos, ocr-core usa el nombre del archivo recibido. El título no influye en el
+nombre ni en la ruta del archivo `.md`.
 
 ## 4. Comportamiento del worker (para referencia)
 
@@ -113,6 +116,7 @@ implementar esa versión. El nombre del archivo `.md` no depende del título.
 | `reprocess_artifacts.md` en `true` | Se regenera y sobrescribe el archivo |
 | Documento con texto nativo que pide `md` | Se genera desde el texto nativo; no se omite |
 | Pide `md` sin `md_path` | Item fallido con mensaje explícito |
+| Pide `md` sin `document.markdown_title` | Título por fallback (sección 3) |
 | El core activo no anuncia `md` (rollback a `0.4.0`) | El worker se detiene **antes** de marcar el item; queda pendiente |
 | El core no escribe el Markdown | Callback sin `md` y `finalize_queue: false` |
 
@@ -134,8 +138,8 @@ implementar esa versión. El nombre del archivo `.md` no depende del título.
 
 - [ ] Persistencia de disponibilidad y ruta del Markdown.
 - [ ] `enqueue()` acepta, calcula como faltante y fusiona `md`.
-- [ ] Payload con `artifacts.requested.md`, `artifacts.expected.md_path` y
-      `has_md`.
+- [ ] Payload con `artifacts.requested.md`, `artifacts.expected.md_path`,
+      `has_md` y `document.markdown_title`.
 - [ ] `/artifacts` acepta `md`, verifica el archivo y lo registra.
 - [ ] Un item con `finalize_queue: false` no se cierra como exitoso.
 - [ ] Pruebas de la sección 5 aprobadas en un entorno de prueba.

@@ -194,25 +194,56 @@ class WorkerMarkdownTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "artifacts.expected.md_path"):
             self._run(self._item(md_path=False))
 
-    def test_document_name_comes_from_the_regulation_file(self):
-        def payload(file_name):
-            return {"queue_id": 7, "queue": {"regulation_file": {"file_name": file_name}}}
-
-        self.assertEqual(worker._document_name(payload("Resolución 045-2026.pdf")),
-                         "Resolución 045-2026")
-        self.assertEqual(worker._document_name(payload("2026/07/acta final.PDF")), "acta final")
-        self.assertEqual(worker._document_name(payload("C:\\docs\\informe.pdf")), "informe")
-        self.assertEqual(worker._document_name(payload(" \n ")), "normatividad_7")
-        self.assertEqual(worker._document_name({"queue_id": 7}), "normatividad_7")
-
-    def test_source_is_sent_with_the_document_name_and_inbox_is_cleaned(self):
+    def _real_like_item(self, **document):
         item = self._item()
-        item["queue"] = {"regulation_file": {"file_name": "Resolución 045-2026.pdf"}}
+        # Forma tomada de la metadata real de producción (2026-10-29).
+        item["regulation_file_id"] = 124200
+        item["document"] = {"regulation_id": 132744, **document}
+        item["queue"] = {"regulation_file": {
+            "id": 124200, "file_idregulation": 132744, "file_name": "212000003462026.pdf",
+            "regulation": {"id": 132744, "reg_title": " 000346-2026-GRH-ORA"},
+        }}
+        return item
+
+    def test_explicit_markdown_title_is_forwarded_to_the_core(self):
+        calls = self._run(self._real_like_item(
+            markdown_title="Resolución 000346-2026-GRH-ORA - Tomo 1"
+        ))
+
+        options = calls["submit"].call_args.kwargs["options"]
+        self.assertEqual(options["document_title"], "Resolución 000346-2026-GRH-ORA - Tomo 1")
+
+    def test_title_fallback_uses_regulation_file_and_title(self):
+        calls = self._run(self._real_like_item())
+
+        options = calls["submit"].call_args.kwargs["options"]
+        self.assertEqual(options["document_title"], "132744 - 124200 - 000346-2026-GRH-ORA")
+
+    def test_title_is_single_line_and_bounded(self):
+        item = self._real_like_item(markdown_title="Línea uno\n\tlínea dos  " + "x" * 600)
+        title = worker._markdown_title(item, worker._text_artifact_metadata(item, None, None))
+        self.assertTrue(title.startswith("Línea uno línea dos x"))
+        self.assertEqual(len(title), worker.MARKDOWN_TITLE_MAX_LENGTH)
+        self.assertTrue(title.isprintable())
+
+    def test_without_data_no_title_is_sent_and_core_uses_the_file_name(self):
+        calls = self._run(self._item())
+
+        self.assertNotIn("document_title", calls["submit"].call_args.kwargs["options"])
+
+    def test_jobs_without_markdown_do_not_send_a_title(self):
+        item = self._real_like_item(markdown_title="Título")
+        item["artifacts"]["requested"]["md"] = False
         calls = self._run(item)
 
+        self.assertNotIn("document_title", calls["submit"].call_args.kwargs["options"])
+
+    def test_inbox_uses_a_technical_name_and_is_cleaned(self):
+        calls = self._run(self._real_like_item())
+
         source = calls["submit"].call_args.args[0]
-        self.assertEqual(source.name, "Resolución 045-2026.pdf")
-        self.assertEqual(source.parent.parent, calls["cache"] / "_inbox")
+        self.assertEqual(source.parent, calls["cache"] / "_inbox")
+        self.assertRegex(source.name, r"^normatividad_41_[0-9a-f]{12}\.pdf$")
         self.assertEqual(calls["inbox_left"], [])
 
     def test_markdown_contract_fixtures_are_understood(self):
@@ -235,6 +266,9 @@ class WorkerMarkdownTest(unittest.TestCase):
         self.assertEqual(md_path.stem, queue["source"]["md5"])
         self.assertEqual(md_path.suffix, ".md")
         self.assertFalse(fixtures["callback_markdown_missing"]["finalize_queue"])
+        metadata = worker._text_artifact_metadata(queue, None, None)
+        self.assertEqual(worker._markdown_title(queue, metadata),
+                         queue["document"]["markdown_title"])
 
     def test_jobs_without_markdown_keep_their_metadata_and_idempotency(self):
         item = self._item(md=False)

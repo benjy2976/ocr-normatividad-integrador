@@ -252,11 +252,7 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
 
     start_time = time.monotonic()
     token = uuid.uuid4().hex[:12]
-    # Carpeta única por item con el nombre real del documento: ocr-core deriva
-    # de ese nombre el título del Markdown.
-    inbox_pdf = (
-        INBOX_DIR / f"normatividad_{queue_id}_{token}" / f"{_document_name(payload)}.pdf"
-    )
+    inbox_pdf = INBOX_DIR / f"normatividad_{queue_id}_{token}.pdf"
 
     shared_pdf_path = _resolve_expected_artifact_path(payload, "pdf")
     shared_text_path = _resolve_expected_artifact_path(payload, "text")
@@ -314,12 +310,16 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
                     "overwrite": force_md,
                 }
 
-            core_options = {
-                "metadata": _text_artifact_metadata(
-                    payload, shared_pdf_path, shared_text_path,
-                    shared_md_path if needs_md else None,
-                ),
-            }
+            metadata = _text_artifact_metadata(
+                payload, shared_pdf_path, shared_text_path,
+                shared_md_path if needs_md else None,
+            )
+            core_options = {"metadata": metadata}
+            # Solo los jobs con Markdown llevan título: los de pdf/text conservan
+            # sus opciones y su clave idempotente.
+            markdown_title = _markdown_title(payload, metadata) if needs_md else None
+            if markdown_title:
+                core_options["document_title"] = markdown_title
             execution_request = _execution_request(payload)
             if SOURCE_REUSE_ENABLED:
                 core_options["pdf_on_skip"] = str(
@@ -569,24 +569,33 @@ def _process_item(item: dict, worker_name: str, worker_logger: logging.Logger) -
 
     finally:
         _cleanup(inbox_pdf)
-        try:
-            inbox_pdf.parent.rmdir()
-        except OSError:
-            pass
 
 
-def _document_name(payload: dict) -> str:
-    """Nombre del documento sin extensión, apto como nombre de archivo."""
-    queue = payload.get("queue") if isinstance(payload.get("queue"), dict) else {}
-    regulation_file = (
-        queue.get("regulation_file")
-        if isinstance(queue.get("regulation_file"), dict)
-        else {}
-    )
-    raw = str(regulation_file.get("file_name") or "").replace("\\", "/")
-    name = Path(raw.rsplit("/", 1)[-1]).stem
-    name = "".join(ch for ch in name if ch.isprintable()).strip(" .")[:120]
-    return name or f"normatividad_{payload.get('queue_id') or payload.get('id')}"
+MARKDOWN_TITLE_MAX_LENGTH = 500
+
+
+def _single_line(value: Any) -> str:
+    text = "".join(ch if ch.isprintable() else " " for ch in str(value or ""))
+    return " ".join(text.split())
+
+
+def _markdown_title(payload: dict, metadata: dict[str, Any]) -> str | None:
+    """Título del Markdown: el que envía Normatividad o, si falta, un fallback.
+
+    El fallback usa solo datos que el payload ya trae: id de la norma, id del
+    archivo y título de la norma. Sin ninguno, se omite y ocr-core deriva el
+    título del nombre del archivo.
+    """
+    document = payload.get("document") if isinstance(payload.get("document"), dict) else {}
+    title = _single_line(document.get("markdown_title"))
+    if not title:
+        parts = (
+            metadata.get("regulation_id"),
+            metadata.get("regulation_file_id"),
+            metadata.get("reg_title"),
+        )
+        title = " - ".join(_single_line(part) for part in parts if _single_line(part))
+    return title[:MARKDOWN_TITLE_MAX_LENGTH] or None
 
 
 def _safe_meta(item: dict) -> str:

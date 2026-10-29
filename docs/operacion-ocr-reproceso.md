@@ -27,11 +27,11 @@ Antes de encolar con `artifacts.requested.md=true`, Normatividad debe:
 3. informar `has_md` en el payload para que un Markdown existente no se vuelva
    a solicitar.
 
-El título visible dentro del Markdown es hoy el `file_name` del archivo
-(`queue.regulation_file.file_name`) o, si no llega, `normatividad_{queue_id}`.
-Está planificado (ocr-core `0.5.1`) que Normatividad envíe el título ya
-compuesto y que el integrador lo reenvíe al core como `options.document_title`;
-sin ese dato, el integrador generará un fallback solo con datos que ya recibe.
+El título visible dentro del Markdown es `document.markdown_title`, que el
+integrador reenvía al core como `options.document_title` (ocr-core `0.5.1`+).
+Sin ese dato usa `{id de la norma} - {id del archivo} - {reg_title}`; sin
+ninguno, ocr-core usa el nombre del archivo recibido. El detalle está en
+`contracts/normatividad-ocr-markdown/README.md`.
 - `OCR_TELEMETRY_FORWARD_ENABLED=true`: exige esquema y procedencia en `/meta`.
   El bloque `execution` se reenvía sin reinterpretarlo, incluida la identidad
   de host/instancia, el motor y la configuración versionada del pipeline.
