@@ -6,7 +6,7 @@
 ## Verificación realizada
 
 - Operación sostenida contra producción real (Normatividad) documentada en `../../context.md`, sección "Operación sostenida real contra producción (2026-09-07)".
-- Corrida de verificación completa entre `ocr-core` y `normatividad-services`: ver `../../../TEST_OFICIAL_2_REPOS.md` (carpeta padre `new_ocr/`, compartido entre ambos repos).
+- Verificación de punta a punta contra producción real (2026-09-04): un ítem (`queue_id=198322`, `regulation_file_id=122850`) recorrió `pull-next`, `processing`, la descarga de la fuente, el OCR en el core y el callback hasta `status=done`, con el PDF y el JSONL escritos en el NFS compartido. El procedimiento vigente está en `../manuales/instalacion-configuracion.md`, "Operación contra producción real".
 - Incidente real documentado y resuelto: colisión por reinicio de `ocr-core` con el worker activo (`queue_id=198379` → reencolado manualmente como `198380`, completado `done`).
 - `adapter/tests/test_shadow_core_client.py`: contrato `POST /jobs`, destinos
   fuera del NFS, shadow deshabilitado por defecto y contención de errores.

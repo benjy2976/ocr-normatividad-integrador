@@ -75,8 +75,10 @@ No es un entorno de prueba: la cola real es de una entidad de gobierno
 regional, con datos que pueden ser personales (ver sección siguiente).
 Checklist antes de correr esto contra la cola real:
 
-1. Confirmar que el `ocr-worker` de Kubernetes está escalado a `0/0` — si
-   no, dos consumidores compiten por la misma cola.
+1. El `ocr-worker` de Kubernetes quedó apagado en el corte definitivo
+   (confirmado por el usuario el 2026-10-19). No hace falta verificarlo en
+   cada prueba; solo si aparece evidencia de que Kubernetes volvió a
+   desplegarse, porque entonces habría dos consumidores en la misma cola.
 2. Un solo item primero (`worker_main.py once`), nunca el loop continuo
    (`docker compose up`), en una primera prueba o después de un cambio.
 3. `PATH_DESTINO` (de donde Normatividad sirve el PDF fuente) y

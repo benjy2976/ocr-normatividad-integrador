@@ -18,8 +18,8 @@ propio.
 Ver `context.md` para el modelo de dominio de Normatividad (estados de
 cola, reglas de `enqueue()`, la distincion entre las rutas de storage que
 Normatividad usa, y las lecciones de seguridad al probar contra produccion real)
-y `TEST_OFICIAL_2_REPOS.md` en la carpeta padre para la corrida de
-verificacion completa.
+y `docs/manuales/instalacion-configuracion.md` para operar contra
+produccion real (prueba de un solo item, modo continuo y errores esperables).
 
 ## Estructura
 

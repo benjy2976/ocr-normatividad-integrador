@@ -52,7 +52,8 @@ repo):
    artefactos pedidos en vez de crear uno nuevo (`resolveActiveQueueContext`).
 4. Solo si hay algo nuevo que pedir, crea la fila de cola.
 
-Para pruebas manuales (ver `TEST_OFICIAL_2_REPOS.md`), se usa
+Para pruebas manuales (ver "Prueba contra una instancia local de
+Normatividad" en `docs/manuales/instalacion-configuracion.md`), se usa
 `force=true` explicito via `artisan tinker` — evita depender de la UI y
 reprocesa aunque el archivo ya tenga OCR previo.
 
@@ -103,13 +104,14 @@ distintos, faciles de confundir:
 Para una instancia de Normatividad de **prueba/backup** local, `PATH_DESTINO`
 suele apuntar a disco local (no a ninguno de estos servidores) — hay que
 copiar el PDF manualmente a la ruta esperada para poder descargarlo via
-`GET /source`. Ver `TEST_OFICIAL_2_REPOS.md`, seccion "Variante: probar
-contra Normatividad de desarrollo/backup".
+`GET /source`. Ver "Prueba contra una instancia local de Normatividad" en
+`docs/manuales/instalacion-configuracion.md`.
 
 ## Seguridad operativa al probar contra produccion real
 
 Checklist usado (y que funciono) la primera vez que se probo este repo
-contra produccion:
+contra produccion. Las reglas vigentes estan en el `AGENTS.md`: desde el
+2026-10-19 el punto 1 ya no se verifica en cada prueba.
 
 1. Confirmar que el `ocr-worker` de Kubernetes esta escalado a `0/0` —
    evita que dos consumidores compitan por la misma cola.
@@ -124,7 +126,8 @@ contra produccion:
 
 Con ese checklist se corrio un item real de produccion
 (`queue_id=198322`, `regulation_file_id=122850`) de punta a punta sin
-incidentes — ver `TEST_OFICIAL_2_REPOS.md` para la corrida completa.
+incidentes el 2026-09-04 (resumen en
+`docs/pruebas-validaciones/verificacion-componente.md`).
 
 ## Reglas de negocio del worker que sobrevivieron la migracion a HTTP
 
@@ -150,9 +153,9 @@ Se encendio el stack completo (`normatividad-worker` + `opensearch` +
 (`https://proyectos.regionhuanuco.gob.pe`), con el `ocr-worker` de K8s
 confirmado en `0/0`. Funciono como reemplazo de facto del worker de K8s
 durante varias horas, procesando items reales de forma continua sin
-intervencion. Detalle completo, comandos y checklist en
-`TEST_OFICIAL_2_REPOS.md` (carpeta padre), seccion "Modo operacion
-sostenida".
+intervencion. Los comandos vigentes estan en
+`docs/manuales/instalacion-configuracion.md`, "Operación contra producción
+real".
 
 **Incidente real:** reiniciar `ocr-core` (en su propio repo) para aplicar
 un fix mientras `normatividad-worker` seguia activo contra produccion
