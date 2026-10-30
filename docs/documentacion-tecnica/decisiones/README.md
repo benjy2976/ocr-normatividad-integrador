@@ -13,7 +13,13 @@ reabre un agente por su cuenta.
 - **No se editan** salvo para corregir erratas o cambiar el estado. Si el
   criterio cambia, se registra una decisión nueva y la anterior pasa a
   `reemplazada por NNNN`.
-- **Estados:** `vigente`, `reemplazada por NNNN` o `retirada`.
+- **Estados:**
+  - `vigente`: rige y el sistema ya la cumple;
+  - `aceptada, sin implementar`: está decidida, pero el sistema **todavía no**
+    la cumple. Lleva al principio un aviso con lo que hace hoy el sistema y
+    remite a su iniciativa. Cuando se implementa, pasa a `vigente`;
+  - `reemplazada por NNNN`;
+  - `retirada`.
 - La evidencia se cita por commit, prueba, contrato o documento vigente, nunca
   por un plan de trabajo.
 
@@ -39,3 +45,4 @@ reabre un agente por su cuenta.
 |---|---|---|---|
 | [0001](0001-markdown-sin-interruptor.md) | El Markdown se atiende cuando la cola lo pide, sin interruptor | vigente | 2026-10-29 |
 | [0002](0002-titulo-compuesto-por-normatividad.md) | El título del Markdown lo compone Normatividad | vigente | 2026-10-29 |
+| [0003](0003-integrador-escribe-los-artefactos.md) | El integrador subirá el PDF y escribirá los artefactos en el NFS | aceptada, sin implementar | 2026-10-29 |

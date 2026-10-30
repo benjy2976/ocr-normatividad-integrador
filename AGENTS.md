@@ -118,6 +118,10 @@ orden. Detalle en `k8s/README.md`.
   (`test_shadow_core_client.py`) y RN-011 (`test_worker_markdown.py`): 42 en
   total. RN-001 a RN-003, RN-005 y RN-006 siguen respaldadas por la operación
   sostenida (`docs/pruebas-validaciones/verificacion-componente.md`).
+- Un PDF de más de 256 MiB (el límite vigente del core) hoy hace que el core
+  responda `500`. El integrador reintenta dos veces con la misma clave y después
+  reporta el ítem como `fail`. La decisión 0003 (aceptada, sin implementar) lo
+  cambia a `block` con `reason_code=source_exceeds_core_limit`.
 - Seguridad de datos personales sin tratamiento formal (ver arriba) —
   bloqueante más urgente que licenciamiento en este repo.
 - No hay cliente para `GET /api/ocr/normatividad/queue/summary` en
