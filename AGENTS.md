@@ -137,12 +137,11 @@ versionan.
 
 ### Dónde viven
 
-- **Plan que afecta solo a este repo:** `planes/<AAAA-MM>-<slug>/`, dentro del
-  repo e ignorado por git (`/planes/` en `.gitignore`).
-- **Plan que afecta a varios repos:**
-  `/home/administrador/new_ocr/planes/<AAAA-MM>-<slug>/`, fuera de todo repo.
-  Es una excepción autorizada por el usuario a la regla de no referenciar rutas
-  externas.
+- Los planes de este repo viven en `planes/<AAAA-MM>-<slug>/`, dentro del repo
+  e ignorados por git (`/planes/` en `.gitignore`).
+- Este repo solo tiene y ejecuta planes de su propio contexto. Un plan que toque
+  varios repos pertenece al contexto que los contiene y se ejecuta allí, no
+  desde este repo.
 - Cada carpeta contiene `plan.md`, `bitacora.md` y, si hace falta, `anexos/`
   (ensayos, simuladores, datos de prueba).
 - El respaldo y la eliminación de los planes son responsabilidad del usuario.
