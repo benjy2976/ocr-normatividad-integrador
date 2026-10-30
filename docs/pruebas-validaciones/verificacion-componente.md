@@ -1,9 +1,10 @@
 # Verificación del componente
 
 > El comportamiento se valida por operación sostenida contra producción y por
-> 42 pruebas unitarias en `adapter/tests/`: `test_worker_reproceso.py`
+> pruebas unitarias en `adapter/tests/`: `test_worker_reproceso.py`
 > (RN-004 y RN-008 a RN-010), `test_worker_markdown.py` (RN-011),
-> `test_shadow_core_client.py` (RN-007) y `test_logging.py`.
+> `test_shadow_core_client.py` (RN-007), `test_logging.py` y
+> `test_documentation_independence.py` (la documentación no depende de planes).
 
 ## Verificación realizada
 

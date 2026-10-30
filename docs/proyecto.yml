@@ -118,7 +118,7 @@ paths:
   user_manual: null # NO_APLICA: sin interfaz de usuario final
   installation: docs/manuales/instalacion-configuracion.md
   operations: docs/manuales/instalacion-configuracion.md # seccion "Operacion contra produccion real"
-  test_plan: null # TODO: hay 42 pruebas unitarias en adapter/tests, sin plan de pruebas formal
+  test_plan: null # TODO: hay pruebas unitarias en adapter/tests, sin plan de pruebas formal
   test_cases: null # TODO: los casos viven como pruebas unitarias en adapter/tests, sin documento formal
   test_results: null # TODO: validacion real hecha contra produccion, no formalizada como resultados de prueba
   # verificacion_componente no es clave estandar del schema v0.6 (additionalProperties)

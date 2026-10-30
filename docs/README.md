@@ -16,7 +16,7 @@
 | Proyecto | OK | Ficha del componente completa. |
 | Manuales | OK | Instalación/configuración completa. |
 | Documentación técnica | PARCIAL | Ficha técnica, arquitectura y reglas de negocio completas; seguridad es gap real y **urgente** (`data.personal_data: true`). |
-| Pruebas y validaciones | PARCIAL | 42 pruebas unitarias (`adapter/tests/`) y verificación real contra producción; sin plan de pruebas formal. |
+| Pruebas y validaciones | PARCIAL | Pruebas unitarias (`adapter/tests/`) y verificación real contra producción; sin plan de pruebas formal. |
 | Documentación administrativa | PARCIAL | Licenciamiento con expediente completo (sin conflicto, en espera de `ocr-core`); titularidad preliminar; opera en producción desde el 2026-10-29, sin acta formal de puesta en producción. |
 
 ## Artefactos y exigibilidad (utility_component)
@@ -32,7 +32,7 @@
 | Diagrama de secuencia | `documentacion-tecnica/diseno/secuencias/` | OK | No exigible para `utility_component`; adoptado igual (SEQ-001, extrapolado de `adapter/app/worker.py`). |
 | Seguridad | `documentacion-tecnica/seguridad/seguridad.md` | GAP REAL — URGENTE | `personal_data: true` con evidencia real; sin tratamiento formal aún. |
 | Instalación/configuración | `manuales/instalacion-configuracion.md` | OK | — |
-| Verificación del componente | `pruebas-validaciones/verificacion-componente.md` | OK | Operación real contra producción y 42 pruebas unitarias. |
+| Verificación del componente | `pruebas-validaciones/verificacion-componente.md` | OK | Operación real contra producción y pruebas unitarias. |
 | Contratos | `contracts/` | OK | Con Normatividad: `normatividad-ocr-reproceso` y `normatividad-ocr-markdown`. Con el core: `ocr-core-http`. API propia: `search-api`. |
 | Licenciamiento | `licenciamiento/` | EN PROGRESO | Sin conflicto propio; determinación en espera de `ocr-core`. |
 | Titularidad | `documentacion-administrativa/titularidad/titularidad.md` | PARCIAL | Preliminar; sin designación institucional formal. |

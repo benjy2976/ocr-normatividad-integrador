@@ -115,8 +115,7 @@ orden. Detalle en `k8s/README.md`.
 
 - Cobertura automatizada todavía parcial. Tienen pruebas unitarias RN-004 y
   RN-008 a RN-010 (`test_worker_reproceso.py`), RN-007
-  (`test_shadow_core_client.py`) y RN-011 (`test_worker_markdown.py`): 42 en
-  total. RN-001 a RN-003, RN-005 y RN-006 siguen respaldadas por la operación
+  (`test_shadow_core_client.py`) y RN-011 (`test_worker_markdown.py`). RN-001 a RN-003, RN-005 y RN-006 siguen respaldadas por la operación
   sostenida (`docs/pruebas-validaciones/verificacion-componente.md`).
 - Un PDF de más de 256 MiB (el límite vigente del core) hoy hace que el core
   responda `500`. El integrador reintenta dos veces con la misma clave y después
@@ -161,8 +160,8 @@ versionan.
 - **Un agente solo lee el plan que el usuario le pidió ejecutar o reanudar.**
   No recorre ni busca en otros planes, ni los usa como fuente de
   documentación.
-- **Transición (2026-10):** algunos planes antiguos siguen versionados en
-  `docs/` mientras se retiran. No se toman como documentación vigente.
+- `adapter/tests/test_documentation_independence.py` lo verifica: falla si un archivo versionado cita un plan
+  concreto, si un plan quedó versionado o si `planes/` deja de estar ignorado.
 
 ### Cosecha
 
