@@ -1,7 +1,7 @@
 # Manual de instalación y configuración
 
 ## Datos generales
-- **Software:** normatividad-services
+- **Software:** ocr-normatividad-integrador
 - **Versión:** 0.1.0 (ver `../proyecto.yml`)
 - **Descripción:** Integración entre la cola OCR de Normatividad y
   `ocr-core`: `adapter/` (consumo de cola) y `search/` (búsqueda documental).
@@ -36,8 +36,8 @@ Buscar:
 curl 'http://localhost:18020/search?q=liquidacion&year=2021'
 ```
 
-Ver el contrato completo de `/search` en el `api.md` de `ocr-core`, sección
-"API de búsqueda" — se preserva ahí como fuente normativa única.
+El contrato completo de `/search` (parámetros, orden, agrupación y forma de la
+respuesta) está en `../contracts/search-api/README.md`.
 
 ### Depuración manual del worker
 

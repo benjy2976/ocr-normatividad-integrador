@@ -1,4 +1,4 @@
-# Contexto de decision: normatividad-services
+# Contexto de decision: ocr-normatividad-integrador
 
 ## Que es Normatividad
 
@@ -86,8 +86,8 @@ Descubierto investigando un `422` real durante las pruebas:
 
 En Kubernetes, esta confusion tenia una version mas grave: el deployment
 de `ocr-api` real **no montaba el PVC `ocr-shared-cache`** — solo lo
-montaban `ocr-worker` y `ocr-search-indexer`. Se corrigio (ver historial
-de `ocr-core/docs/documentacion-tecnica/arquitectura/arquitectura.md`), pero el despliegue a K8s quedo pausado por
+montaban `ocr-worker` y `ocr-search-indexer`. Se corrigio en el repo legado
+`ocr-core` (retirado el 2026-10-29), pero el despliegue a K8s quedo pausado por
 decision del operador.
 
 ## El origen real de los documentos: tres servidores, no uno

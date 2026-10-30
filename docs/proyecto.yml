@@ -6,7 +6,7 @@ documentation_model:
   preproduction_as_complete_target: true
 
 project:
-  name: normatividad-services
+  name: ocr-normatividad-integrador # antes normatividad-services; ese nombre se conserva en los recursos de Kubernetes (k8s/) y en los informes de licenciamiento ya emitidos
   description: >
     Integracion entre la cola OCR de Normatividad y ocr-core:
     consumo de cola (adapter/), orquestacion via HTTP hacia ocr-core, y
@@ -29,8 +29,8 @@ lifecycle:
   gorehco_hito: null # perfil generic, no aplica
 
 version:
-  current: "0.1.0" # bootstrap - no hay versionado formal previo en este repo
-  production: false # sin release versionado ni CI; opero como reemplazo de facto del worker de K8s durante pruebas, no como artefacto liberado
+  current: "0.1.0" # sin tags de version en este repo
+  production: true # consume la cola real de Normatividad desde el 2026-10-29 (reemplaza al worker de K8s, apagado el 2026-10-19); sin release versionado ni CI
 
 data:
   persistent_structured_data: true # el indice de OpenSearch (search/) persiste documentos de pagina; no es una BD relacional propia
@@ -108,7 +108,7 @@ paths:
   # (additionalProperties permite extenderlo) - es el documento minimo
   # que exige el molde utility_component ademas de project_sheet.
   ficha_tecnica_componente: docs/documentacion-tecnica/ficha-tecnica-componente.md
-  requirements: docs/documentacion-tecnica/reglas-negocio.md # no existe requerimientos formal separado (RF/RNF); reglas de negocio (RN-001 a RN-006) es lo unico verificable contra codigo real
+  requirements: docs/documentacion-tecnica/reglas-negocio.md # no existe requerimientos formal separado (RF/RNF); reglas de negocio (RN-001 a RN-011) es lo unico verificable contra codigo real
   analysis: null # TODO: nunca se hizo un analisis formal
   design: null # TODO: sin documento de diseno formal unificado; ver sequence_diagrams abajo
   architecture: docs/documentacion-tecnica/arquitectura/arquitectura.md
@@ -117,9 +117,9 @@ paths:
   personal_data: docs/documentacion-tecnica/seguridad/seguridad.md # mismo documento cubre ambos aspectos por ahora
   user_manual: null # NO_APLICA: sin interfaz de usuario final
   installation: docs/manuales/instalacion-configuracion.md
-  operations: null # TODO: contenido real hoy vive en ../TEST_OFICIAL_2_REPOS.md, fuera de este repo (compartido con ocr-core)
-  test_plan: null # TODO: no existen tests automatizados
-  test_cases: null # TODO: no existen tests automatizados
+  operations: docs/manuales/instalacion-configuracion.md # seccion "Operacion contra produccion real"
+  test_plan: null # TODO: hay 42 pruebas unitarias en adapter/tests, sin plan de pruebas formal
+  test_cases: null # TODO: los casos viven como pruebas unitarias en adapter/tests, sin documento formal
   test_results: null # TODO: validacion real hecha contra produccion, no formalizada como resultados de prueba
   # verificacion_componente no es clave estandar del schema v0.6 (additionalProperties)
   verificacion_componente: docs/pruebas-validaciones/verificacion-componente.md

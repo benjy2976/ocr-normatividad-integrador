@@ -11,7 +11,7 @@ Flujo por iteracion:
                                  -> ocr-core corre preflight + OCR + genera
                                     artefactos, escribiendolos directo en el
                                     storage compartido (POST /jobs, ver
-                                    ocr-core/api.md)
+                                    docs/contracts/ocr-core-http/README.md)
        d. interpretar preflight.decision y job.status, reportar a
           Normatividad (report_artifacts / skip / block / complete)
   4. Cualquier error          -> fail() + esperar
@@ -787,7 +787,7 @@ def _text_artifact_metadata(
 ) -> dict[str, Any]:
     """
     Arma el objeto `metadata` que viaja como passthrough opaco dentro de
-    options.metadata en POST /jobs (ver ocr-core/docs/documentacion-tecnica/datos/diccionario/TextDocument.md).
+    options.metadata en POST /jobs (ver docs/contracts/ocr-core-http/README.md).
     ocr-core
     no le da ningun significado a este dict; solo lo copia dentro del
     artefacto text.

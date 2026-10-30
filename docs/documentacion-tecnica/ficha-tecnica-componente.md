@@ -1,6 +1,6 @@
 # Ficha técnica del componente utilitario
 
-- Nombre: normatividad-services
+- Nombre: ocr-normatividad-integrador (antes `normatividad-services`)
 - Versión: 0.1.0 (ver `../proyecto.yml`)
 - Descripción/finalidad: Componente que conecta la cola OCR de Normatividad con `ocr-core`: consume trabajo de la cola, lo manda a procesar vía HTTP, reporta el resultado, e indexa los artefactos para búsqueda.
 - Lenguaje y versión: Python 3.12

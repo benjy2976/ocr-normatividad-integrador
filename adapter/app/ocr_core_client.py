@@ -3,7 +3,7 @@ Cliente HTTP hacia ocr-core (POST /jobs, GET /jobs/{id}).
 
 Reemplaza el import in-process de app.ocr_pipeline que tenia el worker
 historico. El adaptador no conoce nada del motor OCR mas alla de este
-contrato HTTP — ver ocr-core/api.md, seccion "POST /jobs".
+contrato HTTP — ver docs/contracts/ocr-core-http/README.md.
 """
 
 import os
@@ -35,7 +35,7 @@ def _url(path: str) -> str:
     if not OCR_CORE_URL:
         raise RuntimeError(
             "OCR_CORE_URL no esta configurado. Define la URL interna de "
-            "ocr-core (ej. http://ocr-core:8000) antes de iniciar el worker."
+            "ocr-core (ej. http://core-ocr:8000) antes de iniciar el worker."
         )
     return f"{OCR_CORE_URL}{path}"
 

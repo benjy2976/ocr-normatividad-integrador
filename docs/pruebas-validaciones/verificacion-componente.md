@@ -1,7 +1,9 @@
 # Verificación del componente
 
-> La mayor parte del comportamiento histórico sigue validada por operación
-> sostenida. El aislamiento del fan-out shadow cuenta con pruebas unitarias.
+> El comportamiento se valida por operación sostenida contra producción y por
+> 42 pruebas unitarias en `adapter/tests/`: `test_worker_reproceso.py`
+> (RN-004 y RN-008 a RN-010), `test_worker_markdown.py` (RN-011),
+> `test_shadow_core_client.py` (RN-007) y `test_logging.py`.
 
 ## Verificación realizada
 

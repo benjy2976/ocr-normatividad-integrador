@@ -35,7 +35,8 @@ el momento de extraer `search/` a un repo propio y generalizar el esquema
 
 - Modelo de dominio de Normatividad (estados de cola, reglas de
   `enqueue()`, distincion entre rutas de storage): `../../../context.md`.
-- Motor OCR consumido por HTTP: `../../../../ocr-core/docs/documentacion-tecnica/arquitectura/arquitectura.md`.
+- Motor OCR consumido por HTTP: lo que este repo usa de `ocr-core` está en
+  `../../contracts/ocr-core-http/README.md`.
 - Verificacion contra produccion y procedimiento de operacion:
   `../../pruebas-validaciones/verificacion-componente.md` y
   `../../manuales/instalacion-configuracion.md`.

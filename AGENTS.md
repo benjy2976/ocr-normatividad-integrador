@@ -1,4 +1,4 @@
-# AGENTS.md — normatividad-services
+# AGENTS.md — ocr-normatividad-integrador
 
 > Todas las rutas de este archivo son internas a este repo. No se
 > referencian documentos de otros repos ni de la carpeta padre salvo
@@ -113,9 +113,11 @@ orden. Detalle en `k8s/README.md`.
 
 ## Gaps conocidos del repo
 
-- Cobertura automatizada todavía parcial: RN-007 tiene pruebas unitarias; las
-  reglas históricas RN-001 a RN-006 siguen respaldadas principalmente por
-  operación sostenida (`docs/pruebas-validaciones/verificacion-componente.md`).
+- Cobertura automatizada todavía parcial. Tienen pruebas unitarias RN-004 y
+  RN-008 a RN-010 (`test_worker_reproceso.py`), RN-007
+  (`test_shadow_core_client.py`) y RN-011 (`test_worker_markdown.py`): 42 en
+  total. RN-001 a RN-003, RN-005 y RN-006 siguen respaldadas por la operación
+  sostenida (`docs/pruebas-validaciones/verificacion-componente.md`).
 - Seguridad de datos personales sin tratamiento formal (ver arriba) —
   bloqueante más urgente que licenciamiento en este repo.
 - No hay cliente para `GET /api/ocr/normatividad/queue/summary` en

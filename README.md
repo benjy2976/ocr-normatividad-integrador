@@ -1,4 +1,6 @@
-# normatividad-services
+# ocr-normatividad-integrador
+
+Antes llamado `normatividad-services`.
 
 Todo lo que conecta la cola OCR de Normatividad con `ocr-core`:
 consumo de la cola, orquestacion del OCR via HTTP, y busqueda documental
